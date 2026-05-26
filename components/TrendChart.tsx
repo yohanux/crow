@@ -12,6 +12,7 @@ import {
   Legend,
   ResponsiveContainer,
   Cell,
+  ReferenceArea,
 } from "recharts";
 import { TrendPoint } from "@/lib/types";
 
@@ -170,6 +171,18 @@ export default function TrendChart({ data, selectedMonth, onMonthClick }: TrendC
               <span style={{ color: "var(--text-secondary)", fontSize: 12 }}>{value}</span>
             )}
           />
+          {selectedMonth && (
+            <ReferenceArea
+              yAxisId="count"
+              x1={selectedMonth}
+              x2={selectedMonth}
+              fill="#7c6aff"
+              fillOpacity={0.08}
+              stroke="#7c6aff"
+              strokeOpacity={0.25}
+              strokeWidth={1}
+            />
+          )}
           {visible.positive && (
             <Bar yAxisId="count" dataKey="positive" name="긍정" stackId="a" radius={[0, 0, 0, 0]}>
               {data.map((entry) => (
