@@ -95,32 +95,6 @@ export default function TrendChart({ data, selectedMonth, onMonthClick }: TrendC
             </button>
           </>
         )}
-        <div style={{ marginLeft: "auto", display: "flex", gap: 14, alignItems: "center" }}>
-          {SERIES.map(({ key, label, color }) => (
-            <label
-              key={key}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 5,
-                cursor: "pointer",
-                userSelect: "none",
-                fontSize: 12,
-                color: visible[key] ? color : "var(--text-secondary)",
-                fontWeight: visible[key] ? 600 : 400,
-                transition: "color 0.15s",
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={visible[key]}
-                onChange={() => toggleSeries(key)}
-                style={{ accentColor: color, width: 13, height: 13, cursor: "pointer" }}
-              />
-              {label}
-            </label>
-          ))}
-        </div>
       </div>
       <ResponsiveContainer width="100%" height={280}>
         <ComposedChart
@@ -165,11 +139,6 @@ export default function TrendChart({ data, selectedMonth, onMonthClick }: TrendC
               if (name === "평균평점" && typeof value === "number") return [value.toFixed(1), name];
               return [value, name];
             }}
-          />
-          <Legend
-            formatter={(value) => (
-              <span style={{ color: "var(--text-secondary)", fontSize: 12 }}>{value}</span>
-            )}
           />
           {selectedMonth && (
             <ReferenceArea
@@ -216,6 +185,32 @@ export default function TrendChart({ data, selectedMonth, onMonthClick }: TrendC
           )}
         </ComposedChart>
       </ResponsiveContainer>
+      <div style={{ display: "flex", justifyContent: "center", gap: 20, marginTop: 12 }}>
+        {SERIES.map(({ key, label, color }) => (
+          <label
+            key={key}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 5,
+              cursor: "pointer",
+              userSelect: "none",
+              fontSize: 12,
+              color: visible[key] ? color : "var(--text-secondary)",
+              fontWeight: visible[key] ? 600 : 400,
+              transition: "color 0.15s",
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={visible[key]}
+              onChange={() => toggleSeries(key)}
+              style={{ accentColor: color, width: 13, height: 13, cursor: "pointer" }}
+            />
+            {label}
+          </label>
+        ))}
+      </div>
     </div>
   );
 }

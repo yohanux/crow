@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useLayoutEffect } from "react";
+import { useState, useMemo, useRef, useLayoutEffect, useEffect } from "react";
 import { Review } from "@/lib/types";
 import { format } from "date-fns";
 
@@ -17,7 +17,7 @@ const SENTIMENT_COLOR: Record<string, string> = {
   negative: "var(--negative)",
 };
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 50;
 
 function Highlight({ text, query }: { text: string; query: string }) {
   if (!query.trim()) return <>{text}</>;
@@ -26,7 +26,7 @@ function Highlight({ text, query }: { text: string; query: string }) {
     <>
       {parts.map((part, i) =>
         part.toLowerCase() === query.toLowerCase() ? (
-          <mark key={i} style={{ background: "#7c6aff44", color: "inherit", borderRadius: 2, padding: "0 1px" }}>
+          <mark key={i} style={{ background: "var(--accent)", color: "#ffffff", borderRadius: 3, padding: "0 2px" }}>
             {part}
           </mark>
         ) : (
@@ -130,6 +130,13 @@ export default function ReviewTable({ reviews, versionFilter, monthFilter }: { r
   const [search, setSearch] = useState("");
   const [filterShort, setFilterShort] = useState(false);
   const [page, setPage] = useState(1);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    containerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [page]);
 
   const MIN_LENGTH = 15;
 
@@ -175,6 +182,7 @@ export default function ReviewTable({ reviews, versionFilter, monthFilter }: { r
 
   return (
     <div
+      ref={containerRef}
       style={{
         background: "var(--surface)",
         border: "1px solid var(--border)",
