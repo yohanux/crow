@@ -93,58 +93,62 @@ export default function YearRangeSlider({ min, max, value, onChange, disabled }:
         </span>
       </div>
 
-      {/* Track */}
+      {/* Track + year ticks — unified click zone */}
       <div
-        ref={trackRef}
         onClick={handleTrackClick}
         style={{
-          position: "relative",
-          height: 6,
-          background: "var(--surface2)",
-          borderRadius: 3,
-          margin: "8px 0",
           cursor: disabled ? "not-allowed" : "pointer",
+          padding: "8px 0 4px",
         }}
       >
-        {/* Active fill */}
         <div
+          ref={trackRef}
           style={{
-            position: "absolute",
-            left: `${leftPct}%`,
-            width: `${rightPct - leftPct}%`,
-            height: "100%",
-            background: disabled ? "var(--border)" : "var(--accent)",
+            position: "relative",
+            height: 6,
+            background: "var(--surface2)",
             borderRadius: 3,
-            transition: "background 0.2s",
-            pointerEvents: "none",
           }}
-        />
+        >
+          {/* Active fill */}
+          <div
+            style={{
+              position: "absolute",
+              left: `${leftPct}%`,
+              width: `${rightPct - leftPct}%`,
+              height: "100%",
+              background: disabled ? "var(--border)" : "var(--accent)",
+              borderRadius: 3,
+              transition: "background 0.2s",
+              pointerEvents: "none",
+            }}
+          />
 
-        {/* Start thumb */}
-        <Thumb
-          percent={leftPct}
-          onMouseDown={startDrag("start")}
-          disabled={disabled}
-          label={String(startYear)}
-          side="left"
-        />
+          {/* Start thumb */}
+          <Thumb
+            percent={leftPct}
+            onMouseDown={startDrag("start")}
+            disabled={disabled}
+            label={String(startYear)}
+            side="left"
+          />
 
-        {/* End thumb */}
-        <Thumb
-          percent={rightPct}
-          onMouseDown={startDrag("end")}
-          disabled={disabled}
-          label={String(endYear)}
-          side="right"
-        />
-      </div>
+          {/* End thumb */}
+          <Thumb
+            percent={rightPct}
+            onMouseDown={startDrag("end")}
+            disabled={disabled}
+            label={String(endYear)}
+            side="right"
+          />
+        </div>
 
-      {/* Year ticks — 클릭으로 시작년도 선택 */}
-      <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 2 }}>
-        {Array.from({ length: max - min + 1 }, (_, i) => min + i).map((y) => (
-          <span
-            key={y}
-            onClick={() => !disabled && onChange([Math.min(y, endYear), endYear])}
+        {/* Year ticks */}
+        <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 10 }}>
+          {Array.from({ length: max - min + 1 }, (_, i) => min + i).map((y) => (
+            <span
+              key={y}
+              onClick={(e) => { e.stopPropagation(); if (!disabled) onChange([Math.min(y, endYear), endYear]); }}
             style={{
               fontSize: 11,
               color: y >= startYear && y <= endYear ? "var(--accent)" : "var(--border)",
@@ -159,6 +163,7 @@ export default function YearRangeSlider({ min, max, value, onChange, disabled }:
             {y}
           </span>
         ))}
+        </div>
       </div>
     </div>
   );
