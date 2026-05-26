@@ -63,7 +63,7 @@ function ReviewRow({ r, i, search }: { r: Review; i: number; search: string }) {
         {format(new Date(r.date), "yyyy-MM-dd")}
       </td>
       <td style={{ padding: "12px 16px", textAlign: "center", color: "#f59e0b", fontWeight: 700, verticalAlign: "top" }}>
-        {"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}
+        {"★".repeat(r.rating)}
       </td>
       <td style={{ padding: "12px 16px", color: "var(--text-primary)", maxWidth: 420, verticalAlign: "top" }}>
         {r.title && (
