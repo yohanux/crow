@@ -76,9 +76,6 @@ function ReviewRow({ r, i, search }: { r: Review; i: number; search: string }) {
           {SENTIMENT_LABEL[r.sentiment]}
         </span>
       </td>
-      <td style={{ padding: "12px 16px", color: "var(--text-secondary)", whiteSpace: "nowrap", verticalAlign: "top" }}>
-        <Highlight text={r.userName} query={search} />
-      </td>
       <td style={{ padding: "12px 16px", color: "var(--text-primary)", maxWidth: 420, verticalAlign: "top" }}>
         {r.title && (
           <div style={{ fontWeight: 600, marginBottom: 2 }}>
@@ -352,7 +349,6 @@ export default function ReviewTable({ reviews, versionFilter, monthFilter }: { r
                 평점 {sortKey === "rating" ? (sortAsc ? "↑" : "↓") : ""}
               </th>
               <th style={{ padding: "10px 16px", textAlign: "left", color: "var(--text-secondary)", fontWeight: 600 }}>감성</th>
-              <th style={{ padding: "10px 16px", textAlign: "left", color: "var(--text-secondary)", fontWeight: 600 }}>작성자</th>
               <th style={{ padding: "10px 16px", textAlign: "left", color: "var(--text-secondary)", fontWeight: 600 }}>내용</th>
               <th style={{ padding: "10px 16px", textAlign: "left", color: "var(--text-secondary)", fontWeight: 600 }}>버전</th>
             </tr>
