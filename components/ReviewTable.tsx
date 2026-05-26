@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useLayoutEffect } from "react";
 import { Review } from "@/lib/types";
 import { format } from "date-fns";
 
@@ -34,6 +34,91 @@ function Highlight({ text, query }: { text: string; query: string }) {
         )
       )}
     </>
+  );
+}
+
+function ReviewRow({ r, i, search }: { r: Review; i: number; search: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const textRef = useRef<HTMLDivElement>(null);
+  const [needsExpand, setNeedsExpand] = useState(false);
+
+  useLayoutEffect(() => {
+    const el = textRef.current;
+    if (!el) return;
+    setNeedsExpand(el.scrollHeight > el.clientHeight + 1);
+  }, [r.id, r.text]);
+
+  return (
+    <tr
+      style={{
+        borderTop: "1px solid var(--border)",
+        background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)",
+      }}
+    >
+      <td style={{ padding: "12px 16px", color: "var(--text-secondary)", whiteSpace: "nowrap", verticalAlign: "top" }}>
+        {format(new Date(r.date), "yyyy-MM-dd")}
+      </td>
+      <td style={{ padding: "12px 16px", textAlign: "center", color: "#f59e0b", fontWeight: 700, verticalAlign: "top" }}>
+        {"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}
+      </td>
+      <td style={{ padding: "12px 16px", verticalAlign: "top" }}>
+        <span
+          style={{
+            display: "inline-block",
+            padding: "2px 10px",
+            borderRadius: 20,
+            fontSize: 12,
+            fontWeight: 600,
+            background: `${SENTIMENT_COLOR[r.sentiment]}22`,
+            color: SENTIMENT_COLOR[r.sentiment],
+          }}
+        >
+          {SENTIMENT_LABEL[r.sentiment]}
+        </span>
+      </td>
+      <td style={{ padding: "12px 16px", color: "var(--text-secondary)", whiteSpace: "nowrap", verticalAlign: "top" }}>
+        <Highlight text={r.userName} query={search} />
+      </td>
+      <td style={{ padding: "12px 16px", color: "var(--text-primary)", maxWidth: 420, verticalAlign: "top" }}>
+        {r.title && (
+          <div style={{ fontWeight: 600, marginBottom: 2 }}>
+            <Highlight text={r.title} query={search} />
+          </div>
+        )}
+        <div
+          ref={textRef}
+          style={{
+            color: "var(--text-secondary)",
+            overflow: "hidden",
+            display: "-webkit-box",
+            WebkitLineClamp: expanded ? "unset" : 2,
+            WebkitBoxOrient: "vertical",
+          }}
+        >
+          <Highlight text={r.text} query={search} />
+        </div>
+        {needsExpand && (
+          <button
+            onClick={() => setExpanded((p) => !p)}
+            style={{
+              marginTop: 4,
+              background: "none",
+              border: "none",
+              padding: 0,
+              cursor: "pointer",
+              fontSize: 12,
+              color: "var(--accent)",
+              fontWeight: 600,
+            }}
+          >
+            {expanded ? "접기 ↑" : "더 보기 ↓"}
+          </button>
+        )}
+      </td>
+      <td style={{ padding: "12px 16px", color: "var(--text-secondary)", whiteSpace: "nowrap", verticalAlign: "top" }}>
+        {r.version}
+      </td>
+    </tr>
   );
 }
 
@@ -266,59 +351,7 @@ export default function ReviewTable({ reviews, versionFilter, monthFilter }: { r
           </thead>
           <tbody>
             {pageReviews.map((r, i) => (
-              <tr
-                key={r.id}
-                style={{
-                  borderTop: "1px solid var(--border)",
-                  background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)",
-                }}
-              >
-                <td style={{ padding: "12px 16px", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
-                  {format(new Date(r.date), "yyyy-MM-dd")}
-                </td>
-                <td style={{ padding: "12px 16px", textAlign: "center", color: "#f59e0b", fontWeight: 700 }}>
-                  {"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}
-                </td>
-                <td style={{ padding: "12px 16px" }}>
-                  <span
-                    style={{
-                      display: "inline-block",
-                      padding: "2px 10px",
-                      borderRadius: 20,
-                      fontSize: 12,
-                      fontWeight: 600,
-                      background: `${SENTIMENT_COLOR[r.sentiment]}22`,
-                      color: SENTIMENT_COLOR[r.sentiment],
-                    }}
-                  >
-                    {SENTIMENT_LABEL[r.sentiment]}
-                  </span>
-                </td>
-                <td style={{ padding: "12px 16px", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
-                  <Highlight text={r.userName} query={search} />
-                </td>
-                <td style={{ padding: "12px 16px", color: "var(--text-primary)", maxWidth: 420 }}>
-                  {r.title && (
-                    <div style={{ fontWeight: 600, marginBottom: 2 }}>
-                      <Highlight text={r.title} query={search} />
-                    </div>
-                  )}
-                  <div
-                    style={{
-                      color: "var(--text-secondary)",
-                      overflow: "hidden",
-                      display: "-webkit-box",
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: "vertical",
-                    }}
-                  >
-                    <Highlight text={r.text} query={search} />
-                  </div>
-                </td>
-                <td style={{ padding: "12px 16px", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
-                  {r.version}
-                </td>
-              </tr>
+              <ReviewRow key={r.id} r={r} i={i} search={search} />
             ))}
           </tbody>
         </table>
