@@ -5,20 +5,17 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recha
 interface Props {
   positive: number;
   negative: number;
-  neutral: number;
 }
 
 const COLORS = {
   긍정: "#22c55e",
   부정: "#ef4444",
-  중립: "#f59e0b",
 };
 
-export default function SentimentChart({ positive, negative, neutral }: Props) {
+export default function SentimentChart({ positive, negative }: Props) {
   const data = [
     { name: "긍정", value: positive },
     { name: "부정", value: negative },
-    { name: "중립", value: neutral },
   ].filter((d) => d.value > 0);
 
   return (

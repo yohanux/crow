@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   const reviewRows = reviews.map((r) => ({
     날짜: format(new Date(r.date), "yyyy-MM-dd"),
     평점: r.rating,
-    감성: r.sentiment === "positive" ? "긍정" : r.sentiment === "negative" ? "부정" : "중립",
+    감성: r.sentiment === "positive" ? "긍정" : "부정",
     작성자: r.userName,
     제목: r.title,
     내용: r.text,
@@ -35,8 +35,6 @@ export async function POST(req: NextRequest) {
     { 항목: "긍정 비율 (%)", 값: stats.positivePercent },
     { 항목: "부정 리뷰 수", 값: stats.negativeCount },
     { 항목: "부정 비율 (%)", 값: stats.negativePercent },
-    { 항목: "중립 리뷰 수", 값: stats.neutralCount },
-    { 항목: "중립 비율 (%)", 값: stats.neutralPercent },
     {},
     { 항목: "★5", 값: stats.ratingDist.find((r) => r.star === 5)?.count ?? 0 },
     { 항목: "★4", 값: stats.ratingDist.find((r) => r.star === 4)?.count ?? 0 },
@@ -54,11 +52,10 @@ export async function POST(req: NextRequest) {
     전체: t.total,
     긍정: t.positive,
     부정: t.negative,
-    중립: t.neutral,
     평균평점: Math.round(t.avgRating * 10) / 10,
   }));
   const trendWs = XLSX.utils.json_to_sheet(trendRows);
-  trendWs["!cols"] = [{ wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 10 }];
+  trendWs["!cols"] = [{ wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 10 }];
   XLSX.utils.book_append_sheet(wb, trendWs, "월별 추세");
 
   const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });

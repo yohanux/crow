@@ -9,7 +9,7 @@ export interface Review {
   date: string; // ISO string
   version?: string;
   thumbsUp?: number;
-  sentiment: "positive" | "negative" | "neutral";
+  sentiment: "positive" | "negative";
 }
 
 export interface AppInfo {
@@ -38,7 +38,6 @@ export interface TrendPoint {
   month: string;
   positive: number;
   negative: number;
-  neutral: number;
   total: number;
   avgRating: number;
 }
@@ -47,10 +46,8 @@ export interface DashboardStats {
   total: number;
   positiveCount: number;
   negativeCount: number;
-  neutralCount: number;
   positivePercent: number;
   negativePercent: number;
-  neutralPercent: number;
   avgRating: number;
   ratingDist: RatingDistribution[];
   trend: TrendPoint[];

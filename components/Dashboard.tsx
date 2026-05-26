@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Review, AppInfo } from "@/lib/types";
 import { computeStats } from "@/lib/utils";
 import StatCard from "./StatCard";
@@ -8,6 +8,7 @@ import RatingBar from "./RatingBar";
 import SentimentChart from "./SentimentChart";
 import TrendChart from "./TrendChart";
 import ReviewTable from "./ReviewTable";
+import VersionBreakdown from "./VersionBreakdown";
 
 interface DashboardProps {
   reviews: Review[];
@@ -18,6 +19,7 @@ interface DashboardProps {
 
 export default function Dashboard({ reviews, appInfo, onExport, exporting }: DashboardProps) {
   const stats = useMemo(() => computeStats(reviews), [reviews]);
+  const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
 
   const storeLabel = appInfo.storeType === "appstore" ? "App Store" : "Google Play";
   const storeBadgeColor = appInfo.storeType === "appstore" ? "#007aff" : "#01875f";
@@ -138,12 +140,6 @@ export default function Dashboard({ reviews, appInfo, onExport, exporting }: Das
           sub={`${stats.negativeCount.toLocaleString()}건 (★1~2)`}
           color="var(--negative)"
         />
-        <StatCard
-          label="중립 비율"
-          value={`${stats.neutralPercent}%`}
-          sub={`${stats.neutralCount.toLocaleString()}건 (★3)`}
-          color="var(--neutral)"
-        />
       </div>
 
       {/* Charts row */}
@@ -152,15 +148,21 @@ export default function Dashboard({ reviews, appInfo, onExport, exporting }: Das
         <SentimentChart
           positive={stats.positiveCount}
           negative={stats.negativeCount}
-          neutral={stats.neutralCount}
         />
       </div>
 
       {/* Trend chart */}
       <TrendChart data={stats.trend} />
 
+      {/* Version breakdown */}
+      <VersionBreakdown
+        reviews={reviews}
+        selectedVersion={selectedVersion}
+        onSelect={setSelectedVersion}
+      />
+
       {/* Review table */}
-      <ReviewTable reviews={reviews} />
+      <ReviewTable reviews={reviews} versionFilter={selectedVersion} />
     </div>
   );
 }

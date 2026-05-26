@@ -66,7 +66,6 @@ export default function TrendChart({ data }: { data: TrendPoint[] }) {
             )}
           />
           <Bar yAxisId="count" dataKey="positive" name="긍정" stackId="a" fill="#22c55e" radius={[0, 0, 0, 0]} />
-          <Bar yAxisId="count" dataKey="neutral" name="중립" stackId="a" fill="#f59e0b" />
           <Bar yAxisId="count" dataKey="negative" name="부정" stackId="a" fill="#ef4444" radius={[4, 4, 0, 0]} />
           <Line
             yAxisId="rating"

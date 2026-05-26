@@ -17,10 +17,9 @@ export function extractGooglePlayId(url: string): string | null {
   return match ? match[1] : null;
 }
 
-export function getSentiment(rating: number): "positive" | "negative" | "neutral" {
+export function getSentiment(rating: number): "positive" | "negative" {
   if (rating >= 4) return "positive";
-  if (rating <= 2) return "negative";
-  return "neutral";
+  return "negative";
 }
 
 export function computeStats(reviews: Review[]): DashboardStats {
@@ -30,10 +29,8 @@ export function computeStats(reviews: Review[]): DashboardStats {
       total: 0,
       positiveCount: 0,
       negativeCount: 0,
-      neutralCount: 0,
       positivePercent: 0,
       negativePercent: 0,
-      neutralPercent: 0,
       avgRating: 0,
       ratingDist: [5, 4, 3, 2, 1].map((s) => ({ star: s, count: 0, percent: 0 })),
       trend: [],
@@ -42,7 +39,6 @@ export function computeStats(reviews: Review[]): DashboardStats {
 
   const positiveCount = reviews.filter((r) => r.sentiment === "positive").length;
   const negativeCount = reviews.filter((r) => r.sentiment === "negative").length;
-  const neutralCount = reviews.filter((r) => r.sentiment === "neutral").length;
   const avgRating = reviews.reduce((sum, r) => sum + r.rating, 0) / total;
 
   const ratingDist: RatingDistribution[] = [5, 4, 3, 2, 1].map((star) => {
@@ -64,7 +60,6 @@ export function computeStats(reviews: Review[]): DashboardStats {
       month,
       positive: rs.filter((r) => r.sentiment === "positive").length,
       negative: rs.filter((r) => r.sentiment === "negative").length,
-      neutral: rs.filter((r) => r.sentiment === "neutral").length,
       total: rs.length,
       avgRating: rs.reduce((s, r) => s + r.rating, 0) / rs.length,
     }));
@@ -73,10 +68,8 @@ export function computeStats(reviews: Review[]): DashboardStats {
     total,
     positiveCount,
     negativeCount,
-    neutralCount,
     positivePercent: Math.round((positiveCount / total) * 100),
     negativePercent: Math.round((negativeCount / total) * 100),
-    neutralPercent: Math.round((neutralCount / total) * 100),
     avgRating: Math.round(avgRating * 10) / 10,
     ratingDist,
     trend,

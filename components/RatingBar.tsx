@@ -34,12 +34,7 @@ export default function RatingBar({ data }: { data: RatingDistribution[] }) {
                 style={{
                   width: `${d.percent}%`,
                   height: "100%",
-                  background:
-                    d.star >= 4
-                      ? "var(--positive)"
-                      : d.star === 3
-                      ? "var(--neutral)"
-                      : "var(--negative)",
+                  background: d.star >= 4 ? "var(--positive)" : "var(--negative)",
                   borderRadius: 4,
                   transition: "width 0.6s ease",
                 }}

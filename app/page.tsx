@@ -211,7 +211,7 @@ export default function Home() {
         )}
       </header>
 
-      <main style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px 60px" }}>
+      <main style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px 160px" }}>
         {status !== "done" && (
           <div
             style={{

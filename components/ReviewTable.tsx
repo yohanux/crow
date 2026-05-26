@@ -5,32 +5,53 @@ import { Review } from "@/lib/types";
 import { format } from "date-fns";
 
 type SortKey = "date" | "rating";
-type SentimentFilter = "all" | "positive" | "negative" | "neutral";
+type SentimentFilter = "all" | "positive" | "negative";
 
 const SENTIMENT_LABEL: Record<string, string> = {
   positive: "긍정",
   negative: "부정",
-  neutral: "중립",
 };
 
 const SENTIMENT_COLOR: Record<string, string> = {
   positive: "var(--positive)",
   negative: "var(--negative)",
-  neutral: "var(--neutral)",
 };
 
 const PAGE_SIZE = 20;
 
-export default function ReviewTable({ reviews }: { reviews: Review[] }) {
+function Highlight({ text, query }: { text: string; query: string }) {
+  if (!query.trim()) return <>{text}</>;
+  const parts = text.split(new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi"));
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.toLowerCase() === query.toLowerCase() ? (
+          <mark key={i} style={{ background: "#7c6aff44", color: "inherit", borderRadius: 2, padding: "0 1px" }}>
+            {part}
+          </mark>
+        ) : (
+          part
+        )
+      )}
+    </>
+  );
+}
+
+export default function ReviewTable({ reviews, versionFilter }: { reviews: Review[]; versionFilter?: string | null }) {
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortAsc, setSortAsc] = useState(false);
   const [sentiment, setSentiment] = useState<SentimentFilter>("all");
   const [ratingFilter, setRatingFilter] = useState<number | "all">("all");
   const [search, setSearch] = useState("");
+  const [filterShort, setFilterShort] = useState(false);
   const [page, setPage] = useState(1);
+
+  const MIN_LENGTH = 15;
 
   const filtered = useMemo(() => {
     let res = reviews;
+    if (versionFilter) res = res.filter((r) => (r.version || "알 수 없음") === versionFilter);
+    if (filterShort) res = res.filter((r) => r.text.trim().length >= MIN_LENGTH);
     if (sentiment !== "all") res = res.filter((r) => r.sentiment === sentiment);
     if (ratingFilter !== "all") res = res.filter((r) => r.rating === ratingFilter);
     if (search.trim()) {
@@ -43,7 +64,7 @@ export default function ReviewTable({ reviews }: { reviews: Review[] }) {
       );
     }
     return res;
-  }, [reviews, sentiment, ratingFilter, search]);
+  }, [reviews, versionFilter, sentiment, ratingFilter, search, filterShort]);
 
   const sorted = useMemo(() => {
     const s = [...filtered].sort((a, b) => {
@@ -89,6 +110,21 @@ export default function ReviewTable({ reviews }: { reviews: Review[] }) {
         <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "var(--text-primary)", marginRight: 8 }}>
           리뷰 목록
         </h3>
+        {versionFilter && (
+          <span
+            style={{
+              fontSize: 12,
+              background: "var(--accent-glow)",
+              color: "var(--accent)",
+              border: "1px solid var(--accent)",
+              borderRadius: 20,
+              padding: "2px 10px",
+              fontWeight: 600,
+            }}
+          >
+            v{versionFilter}
+          </span>
+        )}
         <input
           type="text"
           placeholder="검색..."
@@ -121,7 +157,6 @@ export default function ReviewTable({ reviews }: { reviews: Review[] }) {
           <option value="all">전체 감성</option>
           <option value="positive">긍정</option>
           <option value="negative">부정</option>
-          <option value="neutral">중립</option>
         </select>
         <select
           value={ratingFilter}
@@ -145,6 +180,30 @@ export default function ReviewTable({ reviews }: { reviews: Review[] }) {
             <option key={s} value={s}>★{s}</option>
           ))}
         </select>
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            cursor: "pointer",
+            userSelect: "none",
+            fontSize: 13,
+            color: filterShort ? "var(--accent)" : "var(--text-secondary)",
+            fontWeight: filterShort ? 600 : 400,
+            whiteSpace: "nowrap",
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={filterShort}
+            onChange={(e) => { setFilterShort(e.target.checked); setPage(1); }}
+            style={{ accentColor: "var(--accent)", width: 14, height: 14, cursor: "pointer" }}
+          />
+          무의미한 리뷰 제거
+          <span style={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 400 }}>
+            ({MIN_LENGTH}자 이상만)
+          </span>
+        </label>
         <span style={{ marginLeft: "auto", fontSize: 13, color: "var(--text-secondary)" }}>
           {sorted.length.toLocaleString()}건
         </span>
@@ -220,11 +279,13 @@ export default function ReviewTable({ reviews }: { reviews: Review[] }) {
                   </span>
                 </td>
                 <td style={{ padding: "12px 16px", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
-                  {r.userName}
+                  <Highlight text={r.userName} query={search} />
                 </td>
                 <td style={{ padding: "12px 16px", color: "var(--text-primary)", maxWidth: 420 }}>
                   {r.title && (
-                    <div style={{ fontWeight: 600, marginBottom: 2 }}>{r.title}</div>
+                    <div style={{ fontWeight: 600, marginBottom: 2 }}>
+                      <Highlight text={r.title} query={search} />
+                    </div>
                   )}
                   <div
                     style={{
@@ -235,7 +296,7 @@ export default function ReviewTable({ reviews }: { reviews: Review[] }) {
                       WebkitBoxOrient: "vertical",
                     }}
                   >
-                    {r.text}
+                    <Highlight text={r.text} query={search} />
                   </div>
                 </td>
                 <td style={{ padding: "12px 16px", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
