@@ -62,7 +62,7 @@ function ReviewRow({ r, i, search }: { r: Review; i: number; search: string }) {
       <td style={{ padding: "12px 16px", color: "var(--text-secondary)", whiteSpace: "nowrap", verticalAlign: "top" }}>
         {format(new Date(r.date), "yyyy-MM-dd")}
       </td>
-      <td style={{ padding: "12px 16px", textAlign: "center", color: "#f59e0b", fontWeight: 700, verticalAlign: "top" }}>
+      <td style={{ padding: "12px 16px", textAlign: "left", color: "#f59e0b", fontWeight: 700, verticalAlign: "top" }}>
         {"★".repeat(r.rating)}
       </td>
       <td style={{ padding: "12px 16px", color: "var(--text-primary)", maxWidth: 420, verticalAlign: "top" }}>
@@ -327,7 +327,7 @@ export default function ReviewTable({ reviews, versionFilter, monthFilter }: { r
                 onClick={() => toggleSort("rating")}
                 style={{
                   padding: "10px 16px",
-                  textAlign: "center",
+                  textAlign: "left",
                   color: "var(--text-secondary)",
                   fontWeight: 600,
                   cursor: "pointer",
