@@ -92,9 +92,13 @@ export default function Home() {
     }).catch(() => {});
   }, []);
 
-  // result 변경 시 IndexedDB에 저장
+  // result 변경 시 IndexedDB에 저장 + 탭 제목 업데이트
   useEffect(() => {
-    if (!result) return;
+    if (!result) {
+      document.title = "Crow — 앱 리뷰 분석 대시보드";
+      return;
+    }
+    document.title = `Crow - ${result.appInfo.title} 리뷰`;
     idbSave(result, url).catch(() => {});
   }, [result, url]);
 
