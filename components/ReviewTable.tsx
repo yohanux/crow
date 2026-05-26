@@ -48,11 +48,15 @@ function ReviewRow({ r, i, search }: { r: Review; i: number; search: string }) {
     setNeedsExpand(el.scrollHeight > el.clientHeight + 1);
   }, [r.id, r.text]);
 
+  const rowBg = r.sentiment === "positive"
+    ? "rgba(34,197,94,0.07)"
+    : "rgba(239,68,68,0.07)";
+
   return (
     <tr
       style={{
         borderTop: "1px solid var(--border)",
-        background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)",
+        background: rowBg,
       }}
     >
       <td style={{ padding: "12px 16px", color: "var(--text-secondary)", whiteSpace: "nowrap", verticalAlign: "top" }}>
@@ -60,21 +64,6 @@ function ReviewRow({ r, i, search }: { r: Review; i: number; search: string }) {
       </td>
       <td style={{ padding: "12px 16px", textAlign: "center", color: "#f59e0b", fontWeight: 700, verticalAlign: "top" }}>
         {"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}
-      </td>
-      <td style={{ padding: "12px 16px", verticalAlign: "top" }}>
-        <span
-          style={{
-            display: "inline-block",
-            padding: "2px 10px",
-            borderRadius: 20,
-            fontSize: 12,
-            fontWeight: 600,
-            background: `${SENTIMENT_COLOR[r.sentiment]}22`,
-            color: SENTIMENT_COLOR[r.sentiment],
-          }}
-        >
-          {SENTIMENT_LABEL[r.sentiment]}
-        </span>
       </td>
       <td style={{ padding: "12px 16px", color: "var(--text-primary)", maxWidth: 420, verticalAlign: "top" }}>
         {r.title && (
@@ -348,7 +337,6 @@ export default function ReviewTable({ reviews, versionFilter, monthFilter }: { r
               >
                 평점 {sortKey === "rating" ? (sortAsc ? "↑" : "↓") : ""}
               </th>
-              <th style={{ padding: "10px 16px", textAlign: "left", color: "var(--text-secondary)", fontWeight: 600 }}>감성</th>
               <th style={{ padding: "10px 16px", textAlign: "left", color: "var(--text-secondary)", fontWeight: 600 }}>내용</th>
               <th style={{ padding: "10px 16px", textAlign: "left", color: "var(--text-secondary)", fontWeight: 600 }}>버전</th>
             </tr>
