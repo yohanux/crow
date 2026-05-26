@@ -20,6 +20,7 @@ interface DashboardProps {
 export default function Dashboard({ reviews, appInfo, onExport, exporting }: DashboardProps) {
   const stats = useMemo(() => computeStats(reviews), [reviews]);
   const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
 
   const storeLabel = appInfo.storeType === "appstore" ? "App Store" : "Google Play";
   const storeBadgeColor = appInfo.storeType === "appstore" ? "#007aff" : "#01875f";
@@ -152,7 +153,11 @@ export default function Dashboard({ reviews, appInfo, onExport, exporting }: Das
       </div>
 
       {/* Trend chart */}
-      <TrendChart data={stats.trend} />
+      <TrendChart
+        data={stats.trend}
+        selectedMonth={selectedMonth}
+        onMonthClick={setSelectedMonth}
+      />
 
       {/* Version breakdown */}
       <VersionBreakdown
@@ -162,7 +167,7 @@ export default function Dashboard({ reviews, appInfo, onExport, exporting }: Das
       />
 
       {/* Review table */}
-      <ReviewTable reviews={reviews} versionFilter={selectedVersion} />
+      <ReviewTable reviews={reviews} versionFilter={selectedVersion} monthFilter={selectedMonth} />
     </div>
   );
 }

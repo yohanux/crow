@@ -37,7 +37,7 @@ function Highlight({ text, query }: { text: string; query: string }) {
   );
 }
 
-export default function ReviewTable({ reviews, versionFilter }: { reviews: Review[]; versionFilter?: string | null }) {
+export default function ReviewTable({ reviews, versionFilter, monthFilter }: { reviews: Review[]; versionFilter?: string | null; monthFilter?: string | null }) {
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortAsc, setSortAsc] = useState(false);
   const [sentiment, setSentiment] = useState<SentimentFilter>("all");
@@ -51,6 +51,7 @@ export default function ReviewTable({ reviews, versionFilter }: { reviews: Revie
   const filtered = useMemo(() => {
     let res = reviews;
     if (versionFilter) res = res.filter((r) => (r.version || "알 수 없음") === versionFilter);
+    if (monthFilter) res = res.filter((r) => format(new Date(r.date), "yyyy-MM") === monthFilter);
     if (filterShort) res = res.filter((r) => r.text.trim().length >= MIN_LENGTH);
     if (sentiment !== "all") res = res.filter((r) => r.sentiment === sentiment);
     if (ratingFilter !== "all") res = res.filter((r) => r.rating === ratingFilter);
@@ -64,7 +65,7 @@ export default function ReviewTable({ reviews, versionFilter }: { reviews: Revie
       );
     }
     return res;
-  }, [reviews, versionFilter, sentiment, ratingFilter, search, filterShort]);
+  }, [reviews, versionFilter, monthFilter, sentiment, ratingFilter, search, filterShort]);
 
   const sorted = useMemo(() => {
     const s = [...filtered].sort((a, b) => {
@@ -123,6 +124,21 @@ export default function ReviewTable({ reviews, versionFilter }: { reviews: Revie
             }}
           >
             v{versionFilter}
+          </span>
+        )}
+        {monthFilter && (
+          <span
+            style={{
+              fontSize: 12,
+              background: "#7c6aff22",
+              color: "#7c6aff",
+              border: "1px solid #7c6aff44",
+              borderRadius: 20,
+              padding: "2px 10px",
+              fontWeight: 600,
+            }}
+          >
+            {monthFilter}
           </span>
         )}
         <input
