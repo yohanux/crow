@@ -74,7 +74,7 @@ function ReviewRow({ r, i, search }: { r: Review; i: number; search: string }) {
         <div
           ref={textRef}
           style={{
-            color: "var(--text-secondary)",
+            color: "#c4c4d6",
             overflow: "hidden",
             display: "-webkit-box",
             WebkitLineClamp: expanded ? "unset" : 2,
