@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { ScrapeResult, AppInfo } from "@/lib/types";
 import Dashboard from "@/components/Dashboard";
 import YearRangeSlider from "@/components/YearRangeSlider";
@@ -39,6 +39,32 @@ export default function Home() {
   const abortRef = useRef<AbortController | null>(null);
 
   const isAllYears = yearRange[0] === MIN_YEAR && yearRange[1] === MAX_YEAR;
+
+  // 새로고침 복원
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem("crow_result");
+      const savedUrl = sessionStorage.getItem("crow_url");
+      if (saved) {
+        setResult(JSON.parse(saved) as ScrapeResult);
+        setStatus("done");
+        if (savedUrl) setUrl(savedUrl);
+      }
+    } catch {
+      sessionStorage.removeItem("crow_result");
+    }
+  }, []);
+
+  // result 변경 시 sessionStorage에 저장
+  useEffect(() => {
+    if (!result) return;
+    try {
+      sessionStorage.setItem("crow_result", JSON.stringify(result));
+      sessionStorage.setItem("crow_url", url);
+    } catch {
+      // 용량 초과 시 무시
+    }
+  }, [result, url]);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,6 +176,8 @@ export default function Home() {
     setErrorMsg("");
     setLiveAppInfo(null);
     setProgressCount(0);
+    sessionStorage.removeItem("crow_result");
+    sessionStorage.removeItem("crow_url");
   };
 
   return (
