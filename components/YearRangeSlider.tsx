@@ -17,10 +17,26 @@ export default function YearRangeSlider({ min, max, value, onChange, disabled }:
   const toPercent = (v: number) => ((v - min) / (max - min)) * 100;
   const toYear = (percent: number) => Math.round(min + Math.max(0, Math.min(1, percent)) * (max - min));
 
+  // 트랙 클릭 → 시작년도 설정
+  const handleTrackClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (disabled) return;
+      const track = trackRef.current;
+      if (!track) return;
+      const rect = track.getBoundingClientRect();
+      const pct = (e.clientX - rect.left) / rect.width;
+      const year = toYear(pct);
+      onChange([Math.min(year, endYear), endYear]);
+    },
+    [disabled, endYear, onChange, toYear]
+  );
+
+  // 드래그 핸들러 (시작/종료 thumb 공용)
   const startDrag = useCallback(
     (thumb: "start" | "end") => (e: React.MouseEvent | React.TouchEvent) => {
       if (disabled) return;
       e.preventDefault();
+      e.stopPropagation(); // 트랙 click 이벤트 차단
       const track = trackRef.current;
       if (!track) return;
 
@@ -48,12 +64,10 @@ export default function YearRangeSlider({ min, max, value, onChange, disabled }:
       window.addEventListener("touchmove", onTouchMove, { passive: false });
       window.addEventListener("touchend", cleanup);
 
-      // fire once on initial click too
-      const rect = track.getBoundingClientRect();
       const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
-      move(clientX - rect.left < rect.width / 2 + (toPercent(startYear) / 100) * rect.width ? clientX : clientX);
+      move(clientX);
     },
-    [disabled, startYear, endYear, onChange, toYear] // eslint-disable-line react-hooks/exhaustive-deps
+    [disabled, startYear, endYear, onChange, toYear]
   );
 
   const leftPct = toPercent(startYear);
@@ -82,13 +96,14 @@ export default function YearRangeSlider({ min, max, value, onChange, disabled }:
       {/* Track */}
       <div
         ref={trackRef}
+        onClick={handleTrackClick}
         style={{
           position: "relative",
           height: 6,
           background: "var(--surface2)",
           borderRadius: 3,
           margin: "8px 0",
-          cursor: disabled ? "not-allowed" : "default",
+          cursor: disabled ? "not-allowed" : "pointer",
         }}
       >
         {/* Active fill */}
@@ -101,6 +116,7 @@ export default function YearRangeSlider({ min, max, value, onChange, disabled }:
             background: disabled ? "var(--border)" : "var(--accent)",
             borderRadius: 3,
             transition: "background 0.2s",
+            pointerEvents: "none",
           }}
         />
 
@@ -123,11 +139,12 @@ export default function YearRangeSlider({ min, max, value, onChange, disabled }:
         />
       </div>
 
-      {/* Year ticks */}
+      {/* Year ticks — 클릭으로 시작년도 선택 */}
       <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 2 }}>
         {Array.from({ length: max - min + 1 }, (_, i) => min + i).map((y) => (
           <span
             key={y}
+            onClick={() => !disabled && onChange([Math.min(y, endYear), endYear])}
             style={{
               fontSize: 11,
               color: y >= startYear && y <= endYear ? "var(--accent)" : "var(--border)",
@@ -135,6 +152,8 @@ export default function YearRangeSlider({ min, max, value, onChange, disabled }:
               transition: "color 0.15s",
               flex: 1,
               textAlign: "center",
+              cursor: disabled ? "not-allowed" : "pointer",
+              userSelect: "none",
             }}
           >
             {y}
@@ -193,6 +212,7 @@ function Thumb({
       <div
         onMouseDown={onMouseDown}
         onTouchStart={onMouseDown}
+        onClick={(e) => e.stopPropagation()} // 트랙 click 전파 차단
         style={{
           width: 20,
           height: 20,
