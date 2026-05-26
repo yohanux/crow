@@ -21,6 +21,7 @@ export default function Dashboard({ reviews, appInfo, onExport, exporting }: Das
   const stats = useMemo(() => computeStats(reviews), [reviews]);
   const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"trend" | "version">("trend");
 
   const storeLabel = appInfo.storeType === "appstore" ? "App Store" : "Google Play";
   const storeBadgeColor = appInfo.storeType === "appstore" ? "#007aff" : "#01875f";
@@ -152,19 +153,69 @@ export default function Dashboard({ reviews, appInfo, onExport, exporting }: Das
         />
       </div>
 
-      {/* Trend chart */}
-      <TrendChart
-        data={stats.trend}
-        selectedMonth={selectedMonth}
-        onMonthClick={setSelectedMonth}
-      />
+      {/* Trend / Version tabbed card */}
+      <div
+        style={{
+          background: "var(--surface)",
+          border: "1px solid var(--border)",
+          borderRadius: 16,
+          overflow: "hidden",
+        }}
+      >
+        {/* Tab header */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 0,
+            borderBottom: "1px solid var(--border)",
+            padding: "0 24px",
+          }}
+        >
+          {(["trend", "version"] as const).map((tab) => {
+            const label = tab === "trend" ? "월별 리뷰 추세" : "버전별 리뷰";
+            const active = activeTab === tab;
+            return (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  borderBottom: active ? "2px solid var(--accent)" : "2px solid transparent",
+                  padding: "14px 16px 12px",
+                  fontSize: 14,
+                  fontWeight: active ? 700 : 400,
+                  color: active ? "var(--accent)" : "var(--text-secondary)",
+                  cursor: "pointer",
+                  transition: "color 0.15s, border-color 0.15s",
+                  marginBottom: -1,
+                }}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
 
-      {/* Version breakdown */}
-      <VersionBreakdown
-        reviews={reviews}
-        selectedVersion={selectedVersion}
-        onSelect={setSelectedVersion}
-      />
+        {/* Content — both mounted to preserve state */}
+        <div style={{ display: activeTab === "trend" ? "block" : "none" }}>
+          <TrendChart
+            bare
+            data={stats.trend}
+            selectedMonth={selectedMonth}
+            onMonthClick={setSelectedMonth}
+          />
+        </div>
+        <div style={{ display: activeTab === "version" ? "block" : "none" }}>
+          <VersionBreakdown
+            bare
+            reviews={reviews}
+            selectedVersion={selectedVersion}
+            onSelect={setSelectedVersion}
+          />
+        </div>
+      </div>
 
       {/* Review table */}
       <ReviewTable reviews={reviews} versionFilter={selectedVersion} monthFilter={selectedMonth} />

@@ -19,9 +19,10 @@ interface Props {
   reviews: Review[];
   selectedVersion: string | null;
   onSelect: (version: string | null) => void;
+  bare?: boolean;
 }
 
-export default function VersionBreakdown({ reviews, selectedVersion, onSelect }: Props) {
+export default function VersionBreakdown({ reviews, selectedVersion, onSelect, bare }: Props) {
   const [sortBy, setSortBy] = useState<SortKey>("count");
 
   const versions = useMemo(() => {
@@ -55,15 +56,8 @@ export default function VersionBreakdown({ reviews, selectedVersion, onSelect }:
 
   const maxCount = Math.max(...versions.map((v) => v.count), 1);
 
-  return (
-    <div
-      style={{
-        background: "var(--surface)",
-        border: "1px solid var(--border)",
-        borderRadius: 16,
-        overflow: "hidden",
-      }}
-    >
+  const inner = (
+    <>
       {/* Header */}
       <div
         style={{
@@ -75,9 +69,6 @@ export default function VersionBreakdown({ reviews, selectedVersion, onSelect }:
           flexWrap: "wrap",
         }}
       >
-        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "var(--text-primary)" }}>
-          버전별 리뷰
-        </h3>
         {selectedVersion && (
           <span
             style={{
@@ -215,6 +206,24 @@ export default function VersionBreakdown({ reviews, selectedVersion, onSelect }:
           );
         })}
       </div>
+    </>
+  );
+
+  if (bare) return inner;
+
+  return (
+    <div
+      style={{
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        borderRadius: 16,
+        overflow: "hidden",
+      }}
+    >
+      <div style={{ padding: "12px 24px", borderBottom: "1px solid var(--border)" }}>
+        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "var(--text-primary)" }}>버전별 리뷰</h3>
+      </div>
+      {inner}
     </div>
   );
 }

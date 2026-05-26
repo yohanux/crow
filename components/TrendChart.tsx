@@ -9,7 +9,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   Cell,
   ReferenceArea,
@@ -20,6 +19,7 @@ interface TrendChartProps {
   data: TrendPoint[];
   selectedMonth: string | null;
   onMonthClick: (month: string | null) => void;
+  bare?: boolean;
 }
 
 const SERIES = [
@@ -30,7 +30,7 @@ const SERIES = [
 
 type SeriesKey = (typeof SERIES)[number]["key"];
 
-export default function TrendChart({ data, selectedMonth, onMonthClick }: TrendChartProps) {
+export default function TrendChart({ data, selectedMonth, onMonthClick, bare }: TrendChartProps) {
   const [visible, setVisible] = useState<Record<SeriesKey, boolean>>({
     positive: true,
     negative: true,
@@ -52,54 +52,42 @@ export default function TrendChart({ data, selectedMonth, onMonthClick }: TrendC
 
   const showRatingAxis = visible.avgRating;
 
-  return (
-    <div
-      style={{
-        background: "var(--surface)",
-        border: "1px solid var(--border)",
-        borderRadius: 16,
-        padding: "20px 24px",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
-        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "var(--text-primary)" }}>
-          월별 리뷰 추세
-        </h3>
-        {selectedMonth && (
-          <>
-            <span
-              style={{
-                fontSize: 12,
-                background: "var(--accent-glow)",
-                color: "var(--accent)",
-                border: "1px solid var(--accent)",
-                borderRadius: 20,
-                padding: "2px 10px",
-                fontWeight: 600,
-              }}
-            >
-              {selectedMonth}
-            </span>
-            <button
-              onClick={() => onMonthClick(null)}
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                color: "var(--text-secondary)",
-                fontSize: 13,
-                padding: "2px 6px",
-              }}
-            >
-              ✕ 해제
-            </button>
-          </>
-        )}
-      </div>
+  const content = (
+    <div style={{ padding: "20px 24px" }}>
+      {selectedMonth && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+          <span
+            style={{
+              fontSize: 12,
+              background: "var(--accent-glow)",
+              color: "var(--accent)",
+              border: "1px solid var(--accent)",
+              borderRadius: 20,
+              padding: "2px 10px",
+              fontWeight: 600,
+            }}
+          >
+            {selectedMonth}
+          </span>
+          <button
+            onClick={() => onMonthClick(null)}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "var(--text-secondary)",
+              fontSize: 13,
+              padding: "2px 6px",
+            }}
+          >
+            ✕ 해제
+          </button>
+        </div>
+      )}
       <ResponsiveContainer width="100%" height={280}>
         <ComposedChart
           data={data}
-          margin={{ top: 4, right: showRatingAxis ? 16 : 16, left: 0, bottom: 0 }}
+          margin={{ top: 4, right: 16, left: 0, bottom: 0 }}
           onClick={handleChartClick}
           style={{ cursor: "pointer" }}
         >
@@ -211,6 +199,26 @@ export default function TrendChart({ data, selectedMonth, onMonthClick }: TrendC
           </label>
         ))}
       </div>
+    </div>
+  );
+
+  if (bare) return content;
+
+  return (
+    <div
+      style={{
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        borderRadius: 16,
+        overflow: "hidden",
+      }}
+    >
+      <div style={{ padding: "16px 24px", borderBottom: "1px solid var(--border)" }}>
+        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "var(--text-primary)" }}>
+          월별 리뷰 추세
+        </h3>
+      </div>
+      {content}
     </div>
   );
 }
