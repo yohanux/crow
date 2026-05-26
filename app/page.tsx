@@ -366,11 +366,11 @@ export default function Home() {
                   onChange={setYearRange}
                   disabled={status === "loading"}
                 />
-                {!isAllYears && (
-                  <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-                      선택한 기간의 리뷰만 수집합니다 — 범위를 좁힐수록 빠르게 완료됩니다
-                    </span>
+                <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+                    시작년도를 선택하면 해당 기간의 리뷰만 수집합니다 — 범위를 좁힐수록 빠르게 완료됩니다
+                  </span>
+                  {!isAllYears && (
                     <button
                       type="button"
                       onClick={() => setYearRange([MIN_YEAR, MAX_YEAR])}
@@ -387,8 +387,8 @@ export default function Home() {
                     >
                       초기화
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
 
             </form>

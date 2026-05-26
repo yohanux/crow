@@ -11,13 +11,12 @@ interface Props {
 }
 
 export default function YearRangeSlider({ min, max, value, onChange, disabled }: Props) {
-  const [startYear, endYear] = value;
+  const [startYear] = value;
   const trackRef = useRef<HTMLDivElement>(null);
 
   const toPercent = (v: number) => ((v - min) / (max - min)) * 100;
   const toYear = (percent: number) => Math.round(min + Math.max(0, Math.min(1, percent)) * (max - min));
 
-  // 트랙 클릭 → 시작년도 설정
   const handleTrackClick = useCallback(
     (e: React.MouseEvent) => {
       if (disabled) return;
@@ -26,17 +25,16 @@ export default function YearRangeSlider({ min, max, value, onChange, disabled }:
       const rect = track.getBoundingClientRect();
       const pct = (e.clientX - rect.left) / rect.width;
       const year = toYear(pct);
-      onChange([Math.min(year, endYear), endYear]);
+      onChange([Math.min(year, max), max]);
     },
-    [disabled, endYear, onChange, toYear]
+    [disabled, max, onChange, toYear]
   );
 
-  // 드래그 핸들러 (시작/종료 thumb 공용)
   const startDrag = useCallback(
-    (thumb: "start" | "end") => (e: React.MouseEvent | React.TouchEvent) => {
+    (e: React.MouseEvent | React.TouchEvent) => {
       if (disabled) return;
       e.preventDefault();
-      e.stopPropagation(); // 트랙 click 이벤트 차단
+      e.stopPropagation();
       const track = trackRef.current;
       if (!track) return;
 
@@ -44,11 +42,7 @@ export default function YearRangeSlider({ min, max, value, onChange, disabled }:
         const rect = track.getBoundingClientRect();
         const pct = (clientX - rect.left) / rect.width;
         const year = toYear(pct);
-        if (thumb === "start") {
-          onChange([Math.min(year, endYear), endYear]);
-        } else {
-          onChange([startYear, Math.max(year, startYear)]);
-        }
+        onChange([Math.min(year, max), max]);
       };
 
       const onMouseMove = (ev: MouseEvent) => move(ev.clientX);
@@ -67,12 +61,11 @@ export default function YearRangeSlider({ min, max, value, onChange, disabled }:
       const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
       move(clientX);
     },
-    [disabled, startYear, endYear, onChange, toYear]
+    [disabled, max, onChange, toYear]
   );
 
   const leftPct = toPercent(startYear);
-  const rightPct = toPercent(endYear);
-  const isAll = startYear === min && endYear === max;
+  const isAll = startYear === min;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -89,7 +82,7 @@ export default function YearRangeSlider({ min, max, value, onChange, disabled }:
             transition: "all 0.2s",
           }}
         >
-          {isAll ? "전체 기간" : `${startYear} ~ ${endYear}`}
+          {isAll ? "전체 기간" : `${startYear} ~ ${max}`}
         </span>
       </div>
 
@@ -115,7 +108,7 @@ export default function YearRangeSlider({ min, max, value, onChange, disabled }:
             style={{
               position: "absolute",
               left: `${leftPct}%`,
-              width: `${rightPct - leftPct}%`,
+              width: `${100 - leftPct}%`,
               height: "100%",
               background: disabled ? "var(--border)" : "var(--accent)",
               borderRadius: 3,
@@ -124,23 +117,33 @@ export default function YearRangeSlider({ min, max, value, onChange, disabled }:
             }}
           />
 
-          {/* Start thumb */}
-          <Thumb
-            percent={leftPct}
-            onMouseDown={startDrag("start")}
-            disabled={disabled}
-            label={String(startYear)}
-            side="left"
-          />
-
-          {/* End thumb */}
-          <Thumb
-            percent={rightPct}
-            onMouseDown={startDrag("end")}
-            disabled={disabled}
-            label={String(endYear)}
-            side="right"
-          />
+          {/* Start thumb only */}
+          <div
+            style={{
+              position: "absolute",
+              left: `${leftPct}%`,
+              top: "50%",
+              transform: "translate(-50%, -50%)",
+              zIndex: 2,
+            }}
+          >
+            <div
+              onMouseDown={startDrag}
+              onTouchStart={startDrag}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: 20,
+                height: 20,
+                borderRadius: "50%",
+                background: disabled ? "var(--border)" : "var(--accent)",
+                border: "3px solid var(--background)",
+                boxShadow: disabled ? "none" : "0 0 0 2px var(--accent)",
+                cursor: disabled ? "not-allowed" : "grab",
+                transition: "box-shadow 0.15s, background 0.15s",
+                userSelect: "none",
+              }}
+            />
+          </div>
         </div>
 
         {/* Year ticks */}
@@ -148,88 +151,23 @@ export default function YearRangeSlider({ min, max, value, onChange, disabled }:
           {Array.from({ length: max - min + 1 }, (_, i) => min + i).map((y) => (
             <span
               key={y}
-              onClick={(e) => { e.stopPropagation(); if (!disabled) onChange([Math.min(y, endYear), endYear]); }}
-            style={{
-              fontSize: 11,
-              color: y >= startYear && y <= endYear ? "var(--accent)" : "var(--border)",
-              fontWeight: y >= startYear && y <= endYear ? 600 : 400,
-              transition: "color 0.15s",
-              flex: 1,
-              textAlign: "center",
-              cursor: disabled ? "not-allowed" : "pointer",
-              userSelect: "none",
-            }}
-          >
-            {y}
-          </span>
-        ))}
+              onClick={(e) => { e.stopPropagation(); if (!disabled) onChange([Math.min(y, max), max]); }}
+              style={{
+                fontSize: 11,
+                color: y >= startYear ? "var(--accent)" : "var(--border)",
+                fontWeight: y >= startYear ? 600 : 400,
+                transition: "color 0.15s",
+                flex: 1,
+                textAlign: "center",
+                cursor: disabled ? "not-allowed" : "pointer",
+                userSelect: "none",
+              }}
+            >
+              {y}
+            </span>
+          ))}
         </div>
       </div>
-    </div>
-  );
-}
-
-function Thumb({
-  percent,
-  onMouseDown,
-  disabled,
-  label,
-  side,
-}: {
-  percent: number;
-  onMouseDown: (e: React.MouseEvent | React.TouchEvent) => void;
-  disabled?: boolean;
-  label: string;
-  side: "left" | "right";
-}) {
-  return (
-    <div
-      style={{
-        position: "absolute",
-        left: `${percent}%`,
-        top: "50%",
-        transform: "translate(-50%, -50%)",
-        zIndex: 2,
-      }}
-    >
-      {/* Tooltip */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: "calc(100% + 8px)",
-          left: "50%",
-          transform: "translateX(-50%)",
-          background: disabled ? "var(--border)" : "var(--accent)",
-          color: "#fff",
-          fontSize: 11,
-          fontWeight: 700,
-          padding: "2px 7px",
-          borderRadius: 5,
-          whiteSpace: "nowrap",
-          pointerEvents: "none",
-          opacity: side === "left" ? 1 : 1,
-        }}
-      >
-        {label}
-      </div>
-
-      {/* Handle */}
-      <div
-        onMouseDown={onMouseDown}
-        onTouchStart={onMouseDown}
-        onClick={(e) => e.stopPropagation()} // 트랙 click 전파 차단
-        style={{
-          width: 20,
-          height: 20,
-          borderRadius: "50%",
-          background: disabled ? "var(--border)" : "var(--accent)",
-          border: "3px solid var(--background)",
-          boxShadow: disabled ? "none" : "0 0 0 2px var(--accent)",
-          cursor: disabled ? "not-allowed" : "grab",
-          transition: "box-shadow 0.15s, background 0.15s",
-          userSelect: "none",
-        }}
-      />
     </div>
   );
 }
