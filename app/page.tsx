@@ -10,6 +10,48 @@ type Status = "idle" | "loading" | "done" | "error";
 const MIN_YEAR = 2010;
 const MAX_YEAR = new Date().getFullYear();
 
+const IDB_NAME = "crow";
+const IDB_STORE = "cache";
+
+function openDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(IDB_STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function idbSave(result: ScrapeResult, url: string) {
+  const db = await openDB();
+  return new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(IDB_STORE, "readwrite");
+    tx.objectStore(IDB_STORE).put({ result, url }, "current");
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function idbLoad(): Promise<{ result: ScrapeResult; url: string } | null> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(IDB_STORE, "readonly");
+    const req = tx.objectStore(IDB_STORE).get("current");
+    req.onsuccess = () => resolve(req.result ?? null);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function idbClear() {
+  const db = await openDB();
+  return new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(IDB_STORE, "readwrite");
+    tx.objectStore(IDB_STORE).clear();
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
 function parseSseChunk(raw: string): { event: string; data: string }[] {
   const results: { event: string; data: string }[] = [];
   const messages = raw.split("\n\n").filter(Boolean);
@@ -42,28 +84,18 @@ export default function Home() {
 
   // 새로고침 복원
   useEffect(() => {
-    try {
-      const saved = sessionStorage.getItem("crow_result");
-      const savedUrl = sessionStorage.getItem("crow_url");
-      if (saved) {
-        setResult(JSON.parse(saved) as ScrapeResult);
-        setStatus("done");
-        if (savedUrl) setUrl(savedUrl);
-      }
-    } catch {
-      sessionStorage.removeItem("crow_result");
-    }
+    idbLoad().then((saved) => {
+      if (!saved) return;
+      setResult(saved.result);
+      setStatus("done");
+      setUrl(saved.url);
+    }).catch(() => {});
   }, []);
 
-  // result 변경 시 sessionStorage에 저장
+  // result 변경 시 IndexedDB에 저장
   useEffect(() => {
     if (!result) return;
-    try {
-      sessionStorage.setItem("crow_result", JSON.stringify(result));
-      sessionStorage.setItem("crow_url", url);
-    } catch {
-      // 용량 초과 시 무시
-    }
+    idbSave(result, url).catch(() => {});
   }, [result, url]);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
@@ -176,8 +208,7 @@ export default function Home() {
     setErrorMsg("");
     setLiveAppInfo(null);
     setProgressCount(0);
-    sessionStorage.removeItem("crow_result");
-    sessionStorage.removeItem("crow_url");
+    idbClear().catch(() => {});
   };
 
   return (
