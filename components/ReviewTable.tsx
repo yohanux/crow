@@ -54,9 +54,11 @@ function ReviewRow({ r, i, search }: { r: Review; i: number; search: string }) {
 
   return (
     <tr
+      onClick={() => needsExpand && setExpanded((p) => !p)}
       style={{
         borderTop: "1px solid var(--border)",
         background: rowBg,
+        cursor: needsExpand ? "pointer" : "default",
       }}
     >
       <td style={{ padding: "12px 16px", color: "var(--text-secondary)", whiteSpace: "nowrap", verticalAlign: "top" }}>
@@ -83,23 +85,6 @@ function ReviewRow({ r, i, search }: { r: Review; i: number; search: string }) {
         >
           <Highlight text={r.text} query={search} />
         </div>
-        {needsExpand && (
-          <button
-            onClick={() => setExpanded((p) => !p)}
-            style={{
-              marginTop: 4,
-              background: "none",
-              border: "none",
-              padding: 0,
-              cursor: "pointer",
-              fontSize: 12,
-              color: "var(--accent)",
-              fontWeight: 600,
-            }}
-          >
-            {expanded ? "접기 ↑" : "더 보기 ↓"}
-          </button>
-        )}
       </td>
       <td style={{ padding: "12px 16px", color: "var(--text-secondary)", whiteSpace: "nowrap", verticalAlign: "top" }}>
         {r.version}
