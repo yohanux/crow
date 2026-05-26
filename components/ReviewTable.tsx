@@ -85,6 +85,11 @@ function ReviewRow({ r, i, search }: { r: Review; i: number; search: string }) {
         >
           <Highlight text={r.text} query={search} />
         </div>
+        {needsExpand && (
+          <span style={{ fontSize: 12, color: "var(--accent)", fontWeight: 600, marginTop: 2, display: "block" }}>
+            {expanded ? "접기" : "더보기"}
+          </span>
+        )}
       </td>
       <td style={{ padding: "12px 16px", color: "var(--text-secondary)", whiteSpace: "nowrap", verticalAlign: "top" }}>
         {r.version}
