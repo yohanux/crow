@@ -185,7 +185,7 @@ export default function ReviewTable({
   versionFilter?: string | null;
   monthFilter?: string | null;
 }) {
-  const [sortKey, setSortKey] = useState<SortKey>("date");
+  const [sortKey, setSortKey] = useState<SortKey | null>("date");
   const [sortAsc, setSortAsc] = useState(false);
   const [sentiment, setSentiment] = useState<SentimentFilter>("all");
   const [ratingFilter, setRatingFilter] = useState<number | "all">("all");
@@ -244,7 +244,8 @@ export default function ReviewTable({
   }, [reviews, versionFilter, monthFilter, sentiment, ratingFilter, keywords, filterShort]);
 
   const sorted = useMemo(() => {
-    const s = [...filtered].sort((a, b) => {
+    if (!sortKey) return [...filtered];
+    return [...filtered].sort((a, b) => {
       if (sortKey === "date") {
         const diff = new Date(a.date).getTime() - new Date(b.date).getTime();
         return sortAsc ? diff : -diff;
@@ -252,7 +253,6 @@ export default function ReviewTable({
         return sortAsc ? a.rating - b.rating : b.rating - a.rating;
       }
     });
-    return s;
   }, [filtered, sortKey, sortAsc]);
 
   const pointMatchCounts = useMemo(() => {
@@ -277,8 +277,9 @@ export default function ReviewTable({
   const pageReviews = pointFiltered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   function toggleSort(key: SortKey) {
-    if (sortKey === key) setSortAsc((p) => !p);
-    else { setSortKey(key); setSortAsc(false); }
+    if (sortKey !== key) { setSortKey(key); setSortAsc(false); }
+    else if (!sortAsc) { setSortAsc(true); }
+    else { setSortKey(null); setSortAsc(false); }
     setSelectedPoint(null);
     setPage(1);
   }
@@ -644,7 +645,7 @@ export default function ReviewTable({
                   userSelect: "none",
                 }}
               >
-                날짜 {sortKey === "date" ? (sortAsc ? "↑" : "↓") : ""}
+                날짜 {sortKey === "date" ? (sortAsc ? "↑" : "↓") : "↕"}
               </th>
               <th
                 onClick={() => toggleSort("rating")}
@@ -658,7 +659,7 @@ export default function ReviewTable({
                   userSelect: "none",
                 }}
               >
-                평점 {sortKey === "rating" ? (sortAsc ? "↑" : "↓") : ""}
+                평점 {sortKey === "rating" ? (sortAsc ? "↑" : "↓") : "↕"}
               </th>
               <th style={{ padding: "10px 16px", textAlign: "left", color: "var(--text-secondary)", fontWeight: 600 }}>내용</th>
               <th style={{ padding: "10px 16px", textAlign: "left", color: "var(--text-secondary)", fontWeight: 600 }}>버전</th>
