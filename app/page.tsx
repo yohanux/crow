@@ -12,6 +12,7 @@ const MAX_YEAR = new Date().getFullYear();
 
 const IDB_NAME = "crow";
 const IDB_STORE = "cache";
+const SESSION_KEY = "crow_session";
 
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -23,6 +24,7 @@ function openDB(): Promise<IDBDatabase> {
 }
 
 async function idbSave(result: ScrapeResult, url: string) {
+  sessionStorage.setItem(SESSION_KEY, "1");
   const db = await openDB();
   return new Promise<void>((resolve, reject) => {
     const tx = db.transaction(IDB_STORE, "readwrite");
@@ -43,6 +45,7 @@ async function idbLoad(): Promise<{ result: ScrapeResult; url: string } | null> 
 }
 
 async function idbClear() {
+  sessionStorage.removeItem(SESSION_KEY);
   const db = await openDB();
   return new Promise<void>((resolve, reject) => {
     const tx = db.transaction(IDB_STORE, "readwrite");
@@ -82,8 +85,9 @@ export default function Home() {
 
   const isAllYears = yearRange[0] === MIN_YEAR && yearRange[1] === MAX_YEAR;
 
-  // 새로고침 복원
+  // 새로고침 복원 (같은 세션 탭에서만)
   useEffect(() => {
+    if (!sessionStorage.getItem(SESSION_KEY)) return;
     idbLoad().then((saved) => {
       if (!saved) return;
       setResult(saved.result);
@@ -232,7 +236,18 @@ export default function Home() {
           zIndex: 100,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <button
+          onClick={handleReset}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            background: "none",
+            border: "none",
+            padding: 0,
+            cursor: status !== "idle" ? "pointer" : "default",
+          }}
+        >
           <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
             <circle cx="14" cy="14" r="14" fill="var(--accent)" fillOpacity="0.15" />
             <path d="M8 10 L14 6 L20 10 L20 18 L14 22 L8 18 Z" fill="var(--accent)" opacity="0.8" />
@@ -254,7 +269,7 @@ export default function Home() {
           >
             앱 리뷰 분석
           </span>
-        </div>
+        </button>
         {(status === "done" || status === "loading") && (
           <button
             onClick={handleReset}

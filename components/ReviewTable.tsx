@@ -19,13 +19,16 @@ const SENTIMENT_COLOR: Record<string, string> = {
 
 const PAGE_SIZE = 50;
 
-function Highlight({ text, query }: { text: string; query: string }) {
-  if (!query.trim()) return <>{text}</>;
-  const parts = text.split(new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi"));
+function Highlight({ text, queries }: { text: string; queries: string[] }) {
+  const active = queries.filter((q) => q.trim());
+  if (active.length === 0) return <>{text}</>;
+  const pattern = active.map((q) => q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+  const parts = text.split(new RegExp(`(${pattern})`, "gi"));
+  const lowerActive = active.map((q) => q.toLowerCase());
   return (
     <>
       {parts.map((part, i) =>
-        part.toLowerCase() === query.toLowerCase() ? (
+        lowerActive.includes(part.toLowerCase()) ? (
           <mark key={i} style={{ background: "var(--accent)", color: "#ffffff", borderRadius: 3, padding: "0 2px" }}>
             {part}
           </mark>
@@ -37,7 +40,7 @@ function Highlight({ text, query }: { text: string; query: string }) {
   );
 }
 
-function ReviewRow({ r, i, search }: { r: Review; i: number; search: string }) {
+function ReviewRow({ r, i, keywords }: { r: Review; i: number; keywords: string[] }) {
   const [expanded, setExpanded] = useState(false);
   const textRef = useRef<HTMLDivElement>(null);
   const [needsExpand, setNeedsExpand] = useState(false);
@@ -70,7 +73,7 @@ function ReviewRow({ r, i, search }: { r: Review; i: number; search: string }) {
       <td style={{ padding: "12px 16px", color: "var(--text-primary)", maxWidth: 420, verticalAlign: "top" }}>
         {r.title && (
           <div style={{ fontWeight: 600, marginBottom: 2 }}>
-            <Highlight text={r.title} query={search} />
+            <Highlight text={r.title} queries={keywords} />
           </div>
         )}
         <div
@@ -83,7 +86,7 @@ function ReviewRow({ r, i, search }: { r: Review; i: number; search: string }) {
             WebkitBoxOrient: "vertical",
           }}
         >
-          <Highlight text={r.text} query={search} />
+          <Highlight text={r.text} queries={keywords} />
         </div>
         {needsExpand && (
           <span style={{ fontSize: 12, color: "var(--accent)", fontWeight: 600, marginTop: 2, display: "block" }}>
@@ -103,8 +106,10 @@ export default function ReviewTable({ reviews, versionFilter, monthFilter }: { r
   const [sortAsc, setSortAsc] = useState(false);
   const [sentiment, setSentiment] = useState<SentimentFilter>("all");
   const [ratingFilter, setRatingFilter] = useState<number | "all">("all");
-  const [search, setSearch] = useState("");
+  const [keywords, setKeywords] = useState<string[]>([]);
+  const [keywordInput, setKeywordInput] = useState("");
   const [filterShort, setFilterShort] = useState(false);
+  const keywordInputRef = useRef<HTMLInputElement>(null);
   const [page, setPage] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
   const isFirstRender = useRef(true);
@@ -113,6 +118,10 @@ export default function ReviewTable({ reviews, versionFilter, monthFilter }: { r
     if (isFirstRender.current) { isFirstRender.current = false; return; }
     containerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [page]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [versionFilter, monthFilter]);
 
   const MIN_LENGTH = 15;
 
@@ -123,17 +132,20 @@ export default function ReviewTable({ reviews, versionFilter, monthFilter }: { r
     if (filterShort) res = res.filter((r) => r.text.trim().length >= MIN_LENGTH);
     if (sentiment !== "all") res = res.filter((r) => r.sentiment === sentiment);
     if (ratingFilter !== "all") res = res.filter((r) => r.rating === ratingFilter);
-    if (search.trim()) {
-      const q = search.trim().toLowerCase();
-      res = res.filter(
-        (r) =>
-          r.text.toLowerCase().includes(q) ||
-          r.title.toLowerCase().includes(q) ||
-          r.userName.toLowerCase().includes(q)
+    if (keywords.length > 0) {
+      res = res.filter((r) =>
+        keywords.some((k) => {
+          const q = k.toLowerCase();
+          return (
+            r.text.toLowerCase().includes(q) ||
+            r.title.toLowerCase().includes(q) ||
+            r.userName.toLowerCase().includes(q)
+          );
+        })
       );
     }
     return res;
-  }, [reviews, versionFilter, monthFilter, sentiment, ratingFilter, search, filterShort]);
+  }, [reviews, versionFilter, monthFilter, sentiment, ratingFilter, keywords, filterShort]);
 
   const sorted = useMemo(() => {
     const s = [...filtered].sort((a, b) => {
@@ -210,22 +222,93 @@ export default function ReviewTable({ reviews, versionFilter, monthFilter }: { r
             {monthFilter}
           </span>
         )}
-        <input
-          type="text"
-          placeholder="검색..."
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+        <div
+          onClick={() => keywordInputRef.current?.focus()}
           style={{
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            gap: 4,
             background: "var(--surface2)",
             border: "1px solid var(--border)",
             borderRadius: 8,
-            padding: "6px 12px",
-            color: "var(--text-primary)",
-            fontSize: 13,
-            outline: "none",
-            width: 180,
+            padding: "4px 8px",
+            minWidth: 180,
+            maxWidth: 360,
+            cursor: "text",
           }}
-        />
+        >
+          {keywords.map((k) => (
+            <span
+              key={k}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                background: "var(--accent-glow)",
+                color: "var(--accent)",
+                border: "1px solid var(--accent)",
+                borderRadius: 20,
+                padding: "1px 8px",
+                fontSize: 12,
+                fontWeight: 600,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {k}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setKeywords((prev) => prev.filter((v) => v !== k));
+                  setPage(1);
+                }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "var(--accent)",
+                  cursor: "pointer",
+                  padding: 0,
+                  lineHeight: 1,
+                  fontSize: 13,
+                  fontWeight: 700,
+                }}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+          <input
+            ref={keywordInputRef}
+            type="text"
+            placeholder={keywords.length === 0 ? "키워드 입력 후 Enter" : ""}
+            value={keywordInput}
+            onChange={(e) => setKeywordInput(e.target.value)}
+            onKeyDown={(e) => {
+              if ((e.key === "Enter" || e.key === ",") && keywordInput.trim()) {
+                e.preventDefault();
+                const next = keywordInput.trim().replace(/,$/, "");
+                if (next && !keywords.includes(next)) {
+                  setKeywords((prev) => [...prev, next]);
+                  setPage(1);
+                }
+                setKeywordInput("");
+              } else if (e.key === "Backspace" && !keywordInput && keywords.length > 0) {
+                setKeywords((prev) => prev.slice(0, -1));
+                setPage(1);
+              }
+            }}
+            style={{
+              background: "none",
+              border: "none",
+              outline: "none",
+              color: "var(--text-primary)",
+              fontSize: 13,
+              minWidth: 80,
+              flex: 1,
+              padding: "2px 4px",
+            }}
+          />
+        </div>
         <select
           value={sentiment}
           onChange={(e) => { setSentiment(e.target.value as SentimentFilter); setPage(1); }}
@@ -333,57 +416,96 @@ export default function ReviewTable({ reviews, versionFilter, monthFilter }: { r
           </thead>
           <tbody>
             {pageReviews.map((r, i) => (
-              <ReviewRow key={r.id} r={r} i={i} search={search} />
+              <ReviewRow key={r.id} r={r} i={i} keywords={keywords} />
             ))}
           </tbody>
         </table>
       </div>
 
       {/* Pagination */}
-      <div
-        style={{
-          padding: "12px 24px",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          gap: 8,
-          borderTop: "1px solid var(--border)",
-        }}
-      >
-        <button
-          onClick={() => setPage((p) => Math.max(1, p - 1))}
-          disabled={page === 1}
+      {totalPages > 1 && (
+        <div
           style={{
-            background: "var(--surface2)",
-            border: "1px solid var(--border)",
-            borderRadius: 8,
-            padding: "6px 14px",
-            color: page === 1 ? "var(--text-secondary)" : "var(--text-primary)",
-            cursor: page === 1 ? "not-allowed" : "pointer",
-            fontSize: 13,
+            padding: "12px 24px",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: 4,
+            borderTop: "1px solid var(--border)",
+            flexWrap: "wrap",
           }}
         >
-          이전
-        </button>
-        <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-          {page} / {totalPages}
-        </span>
-        <button
-          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-          disabled={page === totalPages}
-          style={{
-            background: "var(--surface2)",
-            border: "1px solid var(--border)",
-            borderRadius: 8,
-            padding: "6px 14px",
-            color: page === totalPages ? "var(--text-secondary)" : "var(--text-primary)",
-            cursor: page === totalPages ? "not-allowed" : "pointer",
-            fontSize: 13,
-          }}
-        >
-          다음
-        </button>
-      </div>
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            style={{
+              background: "var(--surface2)",
+              border: "1px solid var(--border)",
+              borderRadius: 8,
+              padding: "6px 12px",
+              color: page === 1 ? "var(--text-secondary)" : "var(--text-primary)",
+              cursor: page === 1 ? "not-allowed" : "pointer",
+              fontSize: 13,
+              opacity: page === 1 ? 0.4 : 1,
+            }}
+          >
+            ‹ 이전
+          </button>
+          {(() => {
+            const pages: (number | "...")[] = [];
+            if (totalPages <= 10) {
+              for (let i = 1; i <= totalPages; i++) pages.push(i);
+            } else {
+              const left = Math.max(2, page - 2);
+              const right = Math.min(totalPages - 1, page + 2);
+              pages.push(1);
+              if (left > 2) pages.push("...");
+              for (let i = left; i <= right; i++) pages.push(i);
+              if (right < totalPages - 1) pages.push("...");
+              pages.push(totalPages);
+            }
+            return pages.map((p, i) =>
+              p === "..." ? (
+                <span key={`ellipsis-${i}`} style={{ padding: "6px 4px", fontSize: 13, color: "var(--text-secondary)" }}>…</span>
+              ) : (
+                <button
+                  key={p}
+                  onClick={() => setPage(p)}
+                  style={{
+                    background: p === page ? "var(--accent)" : "var(--surface2)",
+                    border: `1px solid ${p === page ? "var(--accent)" : "var(--border)"}`,
+                    borderRadius: 8,
+                    padding: "6px 10px",
+                    minWidth: 34,
+                    color: p === page ? "#ffffff" : "var(--text-primary)",
+                    cursor: p === page ? "default" : "pointer",
+                    fontSize: 13,
+                    fontWeight: p === page ? 700 : 400,
+                  }}
+                >
+                  {p}
+                </button>
+              )
+            );
+          })()}
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            style={{
+              background: "var(--surface2)",
+              border: "1px solid var(--border)",
+              borderRadius: 8,
+              padding: "6px 12px",
+              color: page === totalPages ? "var(--text-secondary)" : "var(--text-primary)",
+              cursor: page === totalPages ? "not-allowed" : "pointer",
+              fontSize: 13,
+              opacity: page === totalPages ? 0.4 : 1,
+            }}
+          >
+            다음 ›
+          </button>
+        </div>
+      )}
     </div>
   );
 }
