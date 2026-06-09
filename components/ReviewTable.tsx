@@ -7,14 +7,28 @@ import { format } from "date-fns";
 type SortKey = "date" | "rating";
 type SentimentFilter = "all" | "positive" | "negative";
 
+type SummaryPoint = {
+  type: "positive" | "negative" | "suggestion";
+  title: string;
+  summary: string;
+  keywords: string[];
+};
+
+type SummaryState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "done"; points: SummaryPoint[]; total: number; sampled: number }
+  | { status: "error"; message: string };
+
 const SENTIMENT_LABEL: Record<string, string> = {
   positive: "긍정",
   negative: "부정",
 };
 
-const SENTIMENT_COLOR: Record<string, string> = {
-  positive: "var(--positive)",
-  negative: "var(--negative)",
+const POINT_COLORS = {
+  positive: { border: "var(--positive)", bg: "rgba(34,197,94,0.07)", dot: "#22c55e", label: "긍정" },
+  negative: { border: "var(--negative)", bg: "rgba(239,68,68,0.07)", dot: "#ef4444", label: "부정" },
+  suggestion: { border: "#7c6aff", bg: "rgba(124,106,255,0.07)", dot: "#7c6aff", label: "개선요청" },
 };
 
 const PAGE_SIZE = 50;
@@ -40,7 +54,7 @@ function Highlight({ text, queries }: { text: string; queries: string[] }) {
   );
 }
 
-function ReviewRow({ r, i, keywords }: { r: Review; i: number; keywords: string[] }) {
+function ReviewRow({ r, keywords }: { r: Review; keywords: string[] }) {
   const [expanded, setExpanded] = useState(false);
   const textRef = useRef<HTMLDivElement>(null);
   const [needsExpand, setNeedsExpand] = useState(false);
@@ -101,7 +115,62 @@ function ReviewRow({ r, i, keywords }: { r: Review; i: number; keywords: string[
   );
 }
 
-export default function ReviewTable({ reviews, versionFilter, monthFilter }: { reviews: Review[]; versionFilter?: string | null; monthFilter?: string | null }) {
+function PointCard({ point }: { point: SummaryPoint }) {
+  const colors = POINT_COLORS[point.type] ?? POINT_COLORS.suggestion;
+  return (
+    <div
+      style={{
+        flex: "1 1 200px",
+        maxWidth: 360,
+        background: colors.bg,
+        border: `1px solid ${colors.dot}33`,
+        borderLeft: `3px solid ${colors.dot}`,
+        borderRadius: 10,
+        padding: "12px 16px",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+        <span
+          style={{ width: 7, height: 7, borderRadius: "50%", background: colors.dot, flexShrink: 0 }}
+        />
+        <span style={{ fontSize: 11, color: colors.dot, fontWeight: 700 }}>{colors.label}</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>{point.title}</span>
+      </div>
+      <p style={{ margin: "0 0 8px", fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+        {point.summary}
+      </p>
+      {point.keywords?.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+          {point.keywords.map((kw, i) => (
+            <span
+              key={i}
+              style={{
+                fontSize: 11,
+                background: `${colors.dot}1a`,
+                color: colors.dot,
+                border: `1px solid ${colors.dot}33`,
+                borderRadius: 20,
+                padding: "1px 8px",
+              }}
+            >
+              {kw}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function ReviewTable({
+  reviews,
+  versionFilter,
+  monthFilter,
+}: {
+  reviews: Review[];
+  versionFilter?: string | null;
+  monthFilter?: string | null;
+}) {
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortAsc, setSortAsc] = useState(false);
   const [sentiment, setSentiment] = useState<SentimentFilter>("all");
@@ -109,6 +178,7 @@ export default function ReviewTable({ reviews, versionFilter, monthFilter }: { r
   const [keywords, setKeywords] = useState<string[]>([]);
   const [keywordInput, setKeywordInput] = useState("");
   const [filterShort, setFilterShort] = useState(false);
+  const [summary, setSummary] = useState<SummaryState>({ status: "idle" });
   const keywordInputRef = useRef<HTMLInputElement>(null);
   const [page, setPage] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -123,7 +193,12 @@ export default function ReviewTable({ reviews, versionFilter, monthFilter }: { r
     setPage(1);
   }, [versionFilter, monthFilter]);
 
-  const MIN_LENGTH = 15;
+  // Reset summary when filters change
+  useEffect(() => {
+    setSummary({ status: "idle" });
+  }, [versionFilter, monthFilter, sentiment, ratingFilter, keywords, filterShort]);
+
+  const MIN_LENGTH = 20;
 
   const filtered = useMemo(() => {
     let res = reviews;
@@ -166,6 +241,31 @@ export default function ReviewTable({ reviews, versionFilter, monthFilter }: { r
     if (sortKey === key) setSortAsc((p) => !p);
     else { setSortKey(key); setSortAsc(false); }
     setPage(1);
+  }
+
+  async function handleAnalyze() {
+    if (filtered.length === 0) return;
+    setSummary({ status: "loading" });
+    try {
+      const payload = filtered.map((r) => ({
+        rating: r.rating,
+        text: r.text.slice(0, 200),
+        sentiment: r.sentiment,
+      }));
+      const res = await fetch("/api/summarize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviews: payload }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSummary({ status: "error", message: data.error ?? "알 수 없는 오류" });
+        return;
+      }
+      setSummary({ status: "done", points: data.points, total: data.total, sampled: data.sampled });
+    } catch (e) {
+      setSummary({ status: "error", message: String(e) });
+    }
   }
 
   return (
@@ -372,10 +472,112 @@ export default function ReviewTable({ reviews, versionFilter, monthFilter }: { r
             ({MIN_LENGTH}자 이상만)
           </span>
         </label>
-        <span style={{ marginLeft: "auto", fontSize: 13, color: "var(--text-secondary)" }}>
-          {sorted.length.toLocaleString()}건
-        </span>
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+            {sorted.length.toLocaleString()}건
+          </span>
+          <button
+            onClick={handleAnalyze}
+            disabled={filtered.length === 0 || summary.status === "loading"}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              background: "linear-gradient(135deg, var(--accent), #7c6aff)",
+              border: "none",
+              borderRadius: 8,
+              padding: "6px 14px",
+              color: "#fff",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: filtered.length === 0 || summary.status === "loading" ? "not-allowed" : "pointer",
+              opacity: filtered.length === 0 ? 0.4 : 1,
+              whiteSpace: "nowrap",
+              transition: "opacity 0.15s",
+            }}
+          >
+            {summary.status === "loading" ? (
+              <>
+                <span
+                  style={{
+                    display: "inline-block",
+                    width: 12,
+                    height: 12,
+                    border: "2px solid rgba(255,255,255,0.4)",
+                    borderTopColor: "#fff",
+                    borderRadius: "50%",
+                    animation: "spin 0.7s linear infinite",
+                  }}
+                />
+                분석 중...
+              </>
+            ) : (
+              <>✦ AI 요약</>
+            )}
+          </button>
+        </div>
       </div>
+
+      {/* AI Summary Panel */}
+      {summary.status !== "idle" && (
+        <div
+          style={{
+            padding: "16px 24px",
+            borderBottom: "1px solid var(--border)",
+            background: "var(--surface2)",
+          }}
+        >
+          {summary.status === "loading" && (
+            <div style={{ color: "var(--text-secondary)", fontSize: 13, textAlign: "center", padding: "8px 0" }}>
+              리뷰를 분석하는 중입니다...
+            </div>
+          )}
+          {summary.status === "error" && (
+            <div style={{ color: "var(--negative)", fontSize: 13 }}>
+              오류: {summary.message}
+            </div>
+          )}
+          {summary.status === "done" && (
+            <div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: 14,
+                }}
+              >
+                <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+                  전체 {summary.total.toLocaleString()}개 리뷰 분석
+                  {summary.sampled < summary.total && ` (${summary.sampled}개 샘플)`}
+                </span>
+                <button
+                  onClick={() => setSummary({ status: "idle" })}
+                  style={{
+                    background: "none",
+                    border: "1px solid var(--border)",
+                    borderRadius: 6,
+                    padding: "2px 10px",
+                    color: "var(--text-secondary)",
+                    fontSize: 12,
+                    cursor: "pointer",
+                  }}
+                >
+                  닫기
+                </button>
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+                {summary.points.map((point, i) => (
+                  <PointCard key={i} point={point} />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Spinner keyframe */}
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
       {/* Table */}
       <div style={{ overflowX: "auto" }}>
@@ -415,8 +617,8 @@ export default function ReviewTable({ reviews, versionFilter, monthFilter }: { r
             </tr>
           </thead>
           <tbody>
-            {pageReviews.map((r, i) => (
-              <ReviewRow key={r.id} r={r} i={i} keywords={keywords} />
+            {pageReviews.map((r) => (
+              <ReviewRow key={r.id} r={r} keywords={keywords} />
             ))}
           </tbody>
         </table>
