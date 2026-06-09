@@ -115,26 +115,63 @@ function ReviewRow({ r, keywords }: { r: Review; keywords: string[] }) {
   );
 }
 
-function PointCard({ point }: { point: SummaryPoint }) {
+function PointCard({
+  point,
+  selected,
+  matchCount,
+  onClick,
+}: {
+  point: SummaryPoint;
+  selected: boolean;
+  matchCount: number;
+  onClick: () => void;
+}) {
   const colors = POINT_COLORS[point.type] ?? POINT_COLORS.suggestion;
   return (
     <div
+      onClick={onClick}
       style={{
         flex: "1 1 200px",
         maxWidth: 360,
-        background: colors.bg,
-        border: `1px solid ${colors.dot}33`,
+        background: selected ? `${colors.dot}18` : colors.bg,
+        border: `1px solid ${selected ? colors.dot : colors.dot + "33"}`,
         borderLeft: `3px solid ${colors.dot}`,
         borderRadius: 10,
         padding: "12px 16px",
+        cursor: "pointer",
+        transition: "background 0.15s, border-color 0.15s",
+        outline: selected ? `2px solid ${colors.dot}` : "none",
+        outlineOffset: 1,
       }}
     >
-      <div style={{ marginBottom: 6 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6, gap: 8 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>{point.title}</span>
+        {matchCount > 0 && (
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 600,
+              color: colors.dot,
+              background: `${colors.dot}1a`,
+              border: `1px solid ${colors.dot}33`,
+              borderRadius: 20,
+              padding: "1px 8px",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+            }}
+          >
+            {matchCount.toLocaleString()}건
+          </span>
+        )}
       </div>
       <p style={{ margin: 0, fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.6 }}>
         {point.summary}
       </p>
+      {selected && (
+        <div style={{ marginTop: 8, fontSize: 11, color: colors.dot, fontWeight: 600 }}>
+          ↓ 관련 리뷰만 표시 중 · 다시 클릭하면 해제
+        </div>
+      )}
     </div>
   );
 }
@@ -156,6 +193,7 @@ export default function ReviewTable({
   const [keywordInput, setKeywordInput] = useState("");
   const [filterShort, setFilterShort] = useState(false);
   const [summary, setSummary] = useState<SummaryState>({ status: "idle" });
+  const [selectedPoint, setSelectedPoint] = useState<number | null>(null);
   const keywordInputRef = useRef<HTMLInputElement>(null);
   const [page, setPage] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -170,10 +208,16 @@ export default function ReviewTable({
     setPage(1);
   }, [versionFilter, monthFilter]);
 
-  // Reset summary when filters change
+  // Reset summary and selection when filters change
   useEffect(() => {
     setSummary({ status: "idle" });
+    setSelectedPoint(null);
   }, [versionFilter, monthFilter, sentiment, ratingFilter, keywords, filterShort]);
+
+  // Reset selection when summary changes
+  useEffect(() => {
+    setSelectedPoint(null);
+  }, [summary.status]);
 
   const MIN_LENGTH = 20;
 
@@ -211,12 +255,31 @@ export default function ReviewTable({
     return s;
   }, [filtered, sortKey, sortAsc]);
 
-  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
-  const pageReviews = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const pointMatchCounts = useMemo(() => {
+    if (summary.status !== "done") return [];
+    return summary.points.map((point) => {
+      const kws = point.keywords.map((k) => k.toLowerCase());
+      return sorted.filter((r) =>
+        kws.some((kw) => r.text.toLowerCase().includes(kw) || r.title.toLowerCase().includes(kw))
+      ).length;
+    });
+  }, [sorted, summary]);
+
+  const pointFiltered = useMemo(() => {
+    if (selectedPoint === null || summary.status !== "done") return sorted;
+    const kws = summary.points[selectedPoint].keywords.map((k) => k.toLowerCase());
+    return sorted.filter((r) =>
+      kws.some((kw) => r.text.toLowerCase().includes(kw) || r.title.toLowerCase().includes(kw))
+    );
+  }, [sorted, selectedPoint, summary]);
+
+  const totalPages = Math.max(1, Math.ceil(pointFiltered.length / PAGE_SIZE));
+  const pageReviews = pointFiltered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) setSortAsc((p) => !p);
     else { setSortKey(key); setSortAsc(false); }
+    setSelectedPoint(null);
     setPage(1);
   }
 
@@ -451,7 +514,9 @@ export default function ReviewTable({
         </label>
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-            {sorted.length.toLocaleString()}건
+            {selectedPoint !== null
+              ? `${pointFiltered.length.toLocaleString()} / ${sorted.length.toLocaleString()}건`
+              : `${sorted.length.toLocaleString()}건`}
           </span>
           <button
             onClick={handleAnalyze}
@@ -545,7 +610,13 @@ export default function ReviewTable({
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
                 {summary.points.map((point, i) => (
-                  <PointCard key={i} point={point} />
+                  <PointCard
+                    key={i}
+                    point={point}
+                    selected={selectedPoint === i}
+                    matchCount={pointMatchCounts[i] ?? 0}
+                    onClick={() => { setSelectedPoint(selectedPoint === i ? null : i); setPage(1); }}
+                  />
                 ))}
               </div>
             </div>
