@@ -19,6 +19,13 @@ interface DashboardProps {
 
 export default function Dashboard({ reviews, appInfo, onExport, exporting }: DashboardProps) {
   const stats = useMemo(() => computeStats(reviews), [reviews]);
+  const reviewYearRange = useMemo(() => {
+    if (reviews.length === 0) return null;
+    const years = reviews.map((r) => new Date(r.date).getFullYear());
+    const min = Math.min(...years);
+    const max = Math.max(...years);
+    return min === max ? `${min}` : `${min} – ${max}`;
+  }, [reviews]);
   const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"trend" | "version">("trend");
@@ -71,6 +78,11 @@ export default function Dashboard({ reviews, appInfo, onExport, exporting }: Das
           <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
             {appInfo.developer} &nbsp;·&nbsp; 스토어 평점 ★{appInfo.score.toFixed(1)}
           </span>
+          {reviewYearRange && (
+            <div style={{ marginTop: 8, fontSize: 28, fontWeight: 800, color: "var(--accent)", letterSpacing: "-1px", lineHeight: 1 }}>
+              {reviewYearRange}
+            </div>
+          )}
         </div>
         <div style={{ display: "flex", gap: 12, alignItems: "center", flexShrink: 0 }}>
           <a
