@@ -129,35 +129,12 @@ function PointCard({ point }: { point: SummaryPoint }) {
         padding: "12px 16px",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-        <span
-          style={{ width: 7, height: 7, borderRadius: "50%", background: colors.dot, flexShrink: 0 }}
-        />
-        <span style={{ fontSize: 11, color: colors.dot, fontWeight: 700 }}>{colors.label}</span>
+      <div style={{ marginBottom: 6 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>{point.title}</span>
       </div>
-      <p style={{ margin: "0 0 8px", fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+      <p style={{ margin: 0, fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.6 }}>
         {point.summary}
       </p>
-      {point.keywords?.length > 0 && (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-          {point.keywords.map((kw, i) => (
-            <span
-              key={i}
-              style={{
-                fontSize: 11,
-                background: `${colors.dot}1a`,
-                color: colors.dot,
-                border: `1px solid ${colors.dot}33`,
-                borderRadius: 20,
-                padding: "1px 8px",
-              }}
-            >
-              {kw}
-            </span>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
