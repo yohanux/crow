@@ -20,15 +20,26 @@ type SummaryState =
   | { status: "done"; points: SummaryPoint[]; total: number; sampled: number }
   | { status: "error"; message: string };
 
-const SENTIMENT_LABEL: Record<string, string> = {
-  positive: "긍정",
-  negative: "부정",
-};
-
-const POINT_COLORS = {
-  positive: { border: "var(--positive)", bg: "rgba(34,197,94,0.07)", dot: "#22c55e", label: "긍정" },
-  negative: { border: "var(--negative)", bg: "rgba(239,68,68,0.07)", dot: "#ef4444", label: "부정" },
-  suggestion: { border: "#7c6aff", bg: "rgba(124,106,255,0.07)", dot: "#7c6aff", label: "개선요청" },
+// Tailwind는 클래스 문자열을 정적으로 스캔하므로 타입별 클래스를 통째로 적어 둔다
+const POINT_STYLES = {
+  positive: {
+    text: "text-positive",
+    card: "border-positive/20 border-l-positive bg-positive/[0.07]",
+    selected: "border-positive bg-positive/[0.09] outline-2 outline-offset-1 outline-positive",
+    badge: "border-positive/20 bg-positive/10 text-positive",
+  },
+  negative: {
+    text: "text-negative",
+    card: "border-negative/20 border-l-negative bg-negative/[0.07]",
+    selected: "border-negative bg-negative/[0.09] outline-2 outline-offset-1 outline-negative",
+    badge: "border-negative/20 bg-negative/10 text-negative",
+  },
+  suggestion: {
+    text: "text-accent",
+    card: "border-accent/20 border-l-accent bg-accent/[0.07]",
+    selected: "border-accent bg-accent/[0.09] outline-2 outline-offset-1 outline-accent",
+    badge: "border-accent/20 bg-accent/10 text-accent",
+  },
 };
 
 const PAGE_SIZE = 50;
@@ -43,7 +54,7 @@ function Highlight({ text, queries }: { text: string; queries: string[] }) {
     <>
       {parts.map((part, i) =>
         lowerActive.includes(part.toLowerCase()) ? (
-          <mark key={i} style={{ background: "var(--accent)", color: "#ffffff", borderRadius: 3, padding: "0 2px" }}>
+          <mark key={i} className="rounded-[3px] bg-accent px-0.5 text-white">
             {part}
           </mark>
         ) : (
@@ -65,50 +76,34 @@ function ReviewRow({ r, keywords }: { r: Review; keywords: string[] }) {
     setNeedsExpand(el.scrollHeight > el.clientHeight + 1);
   }, [r.id, r.text]);
 
-  const rowBg = r.sentiment === "positive"
-    ? "rgba(34,197,94,0.07)"
-    : "rgba(239,68,68,0.07)";
-
   return (
     <tr
       onClick={() => needsExpand && setExpanded((p) => !p)}
-      style={{
-        borderTop: "1px solid var(--border)",
-        background: rowBg,
-        cursor: needsExpand ? "pointer" : "default",
-      }}
+      // 모바일: 카드형(flex) / md 이상: 표의 행
+      className={`flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line px-4 py-3 md:table-row md:p-0 ${
+        r.sentiment === "positive" ? "bg-positive/[0.07]" : "bg-negative/[0.07]"
+      } ${needsExpand ? "cursor-pointer" : "cursor-default"}`}
     >
-      <td style={{ padding: "12px 16px", color: "var(--text-secondary)", whiteSpace: "nowrap", verticalAlign: "top" }}>
+      <td className="order-1 block text-xs whitespace-nowrap text-fg-muted md:table-cell md:px-4 md:py-3 md:align-top md:text-[13px]">
         {format(new Date(r.date), "yyyy-MM-dd")}
       </td>
-      <td style={{ padding: "12px 16px", textAlign: "left", color: "#f59e0b", fontWeight: 700, verticalAlign: "top" }}>
+      <td className="order-2 block text-left text-xs font-bold text-star md:table-cell md:px-4 md:py-3 md:align-top md:text-[13px]">
         {"★".repeat(r.rating)}
       </td>
-      <td style={{ padding: "12px 16px", color: "var(--text-primary)", maxWidth: 420, verticalAlign: "top" }}>
+      <td className="order-4 mt-1 block basis-full text-fg md:mt-0 md:table-cell md:max-w-[420px] md:px-4 md:py-3 md:align-top">
         {r.title && (
-          <div style={{ fontWeight: 600, marginBottom: 2 }}>
+          <div className="mb-0.5 font-semibold">
             <Highlight text={r.title} queries={keywords} />
           </div>
         )}
-        <div
-          ref={textRef}
-          style={{
-            color: "#c4c4d6",
-            overflow: "hidden",
-            display: "-webkit-box",
-            WebkitLineClamp: expanded ? "unset" : 2,
-            WebkitBoxOrient: "vertical",
-          }}
-        >
+        <div ref={textRef} className={`overflow-hidden text-[#c4c4d6] ${expanded ? "" : "line-clamp-2"}`}>
           <Highlight text={r.text} queries={keywords} />
         </div>
         {needsExpand && (
-          <span style={{ fontSize: 12, color: "var(--accent)", fontWeight: 600, marginTop: 2, display: "block" }}>
-            {expanded ? "접기" : "더보기"}
-          </span>
+          <span className="mt-0.5 block text-xs font-semibold text-accent">{expanded ? "접기" : "더보기"}</span>
         )}
       </td>
-      <td style={{ padding: "12px 16px", color: "var(--text-secondary)", whiteSpace: "nowrap", verticalAlign: "top" }}>
+      <td className="order-3 ml-auto block text-xs whitespace-nowrap text-fg-muted md:table-cell md:px-4 md:py-3 md:align-top md:text-[13px]">
         {r.version}
       </td>
     </tr>
@@ -126,51 +121,27 @@ function PointCard({
   matchCount: number;
   onClick: () => void;
 }) {
-  const colors = POINT_COLORS[point.type] ?? POINT_COLORS.suggestion;
+  const st = POINT_STYLES[point.type] ?? POINT_STYLES.suggestion;
   return (
     <div
       onClick={onClick}
-      style={{
-        flex: "1 1 200px",
-        maxWidth: 360,
-        background: selected ? `${colors.dot}18` : colors.bg,
-        border: `1px solid ${selected ? colors.dot : colors.dot + "33"}`,
-        borderLeft: `3px solid ${colors.dot}`,
-        borderRadius: 10,
-        padding: "12px 16px",
-        cursor: "pointer",
-        transition: "background 0.15s, border-color 0.15s",
-        outline: selected ? `2px solid ${colors.dot}` : "none",
-        outlineOffset: 1,
-      }}
+      className={`basis-full cursor-pointer rounded-[10px] border border-l-[3px] px-4 py-3 transition-colors md:max-w-[360px] md:min-w-[200px] md:flex-1 md:basis-[200px] ${
+        selected ? st.selected : st.card
+      }`}
     >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6, gap: 8 }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>{point.title}</span>
+      <div className="mb-1.5 flex items-center justify-between gap-2">
+        <span className="text-[13px] font-bold text-fg">{point.title}</span>
         {matchCount > 0 && (
           <span
-            style={{
-              fontSize: 11,
-              fontWeight: 600,
-              color: colors.dot,
-              background: `${colors.dot}1a`,
-              border: `1px solid ${colors.dot}33`,
-              borderRadius: 20,
-              padding: "1px 8px",
-              whiteSpace: "nowrap",
-              flexShrink: 0,
-            }}
+            className={`shrink-0 rounded-full border px-2 py-px text-[11px] font-semibold whitespace-nowrap ${st.badge}`}
           >
             {matchCount.toLocaleString()}건
           </span>
         )}
       </div>
-      <p style={{ margin: 0, fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.6 }}>
-        {point.summary}
-      </p>
+      <p className="m-0 text-xs leading-relaxed text-fg-muted">{point.summary}</p>
       {selected && (
-        <div style={{ marginTop: 8, fontSize: 11, color: colors.dot, fontWeight: 600 }}>
-          ↓ 관련 리뷰만 표시 중 · 다시 클릭하면 해제
-        </div>
+        <div className={`mt-2 text-[11px] font-semibold ${st.text}`}>↓ 관련 리뷰만 표시 중 · 다시 클릭하면 해제</div>
       )}
     </div>
   );
@@ -309,92 +280,30 @@ export default function ReviewTable({
     }
   }
 
+  const chip = "rounded-full border px-2.5 py-0.5 text-xs font-semibold";
+  const select =
+    "min-h-10 flex-1 rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-base text-fg outline-none md:min-h-0 md:flex-none md:text-[13px]";
+  const pageBtn = "rounded-lg border px-3 py-1.5 text-[13px]";
+
   return (
-    <div
-      ref={containerRef}
-      style={{
-        background: "var(--surface)",
-        border: "1px solid var(--border)",
-        borderRadius: 16,
-        overflow: "hidden",
-      }}
-    >
+    <div ref={containerRef} className="overflow-hidden rounded-2xl border border-line bg-surface">
       {/* Filters */}
-      <div
-        style={{
-          padding: "16px 24px",
-          display: "flex",
-          gap: 12,
-          alignItems: "center",
-          flexWrap: "wrap",
-          borderBottom: "1px solid var(--border)",
-        }}
-      >
-        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "var(--text-primary)", marginRight: 8 }}>
-          리뷰 목록
-        </h3>
+      <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-3 md:gap-3 md:px-6 md:py-4">
+        <h3 className="mr-2 text-[15px] font-semibold text-fg">리뷰 목록</h3>
         {versionFilter && (
-          <span
-            style={{
-              fontSize: 12,
-              background: "var(--accent-glow)",
-              color: "var(--accent)",
-              border: "1px solid var(--accent)",
-              borderRadius: 20,
-              padding: "2px 10px",
-              fontWeight: 600,
-            }}
-          >
-            v{versionFilter}
-          </span>
+          <span className={`${chip} border-accent bg-accent-glow text-accent`}>v{versionFilter}</span>
         )}
         {monthFilter && (
-          <span
-            style={{
-              fontSize: 12,
-              background: "#7c6aff22",
-              color: "#7c6aff",
-              border: "1px solid #7c6aff44",
-              borderRadius: 20,
-              padding: "2px 10px",
-              fontWeight: 600,
-            }}
-          >
-            {monthFilter}
-          </span>
+          <span className={`${chip} border-accent/25 bg-accent/10 text-accent`}>{monthFilter}</span>
         )}
         <div
           onClick={() => keywordInputRef.current?.focus()}
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            alignItems: "center",
-            gap: 4,
-            background: "var(--surface2)",
-            border: "1px solid var(--border)",
-            borderRadius: 8,
-            padding: "4px 8px",
-            minWidth: 180,
-            maxWidth: 360,
-            cursor: "text",
-          }}
+          className="flex min-w-[180px] basis-full cursor-text flex-wrap items-center gap-1 rounded-lg border border-line bg-surface-2 px-2 py-1 md:max-w-[360px] md:basis-auto"
         >
           {keywords.map((k) => (
             <span
               key={k}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 4,
-                background: "var(--accent-glow)",
-                color: "var(--accent)",
-                border: "1px solid var(--accent)",
-                borderRadius: 20,
-                padding: "1px 8px",
-                fontSize: 12,
-                fontWeight: 600,
-                whiteSpace: "nowrap",
-              }}
+              className="inline-flex items-center gap-1 rounded-full border border-accent bg-accent-glow px-2 py-px text-xs font-semibold whitespace-nowrap text-accent"
             >
               {k}
               <button
@@ -403,16 +312,7 @@ export default function ReviewTable({
                   setKeywords((prev) => prev.filter((v) => v !== k));
                   setPage(1);
                 }}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: "var(--accent)",
-                  cursor: "pointer",
-                  padding: 0,
-                  lineHeight: 1,
-                  fontSize: 13,
-                  fontWeight: 700,
-                }}
+                className="cursor-pointer p-0 text-[13px] leading-none font-bold text-accent"
               >
                 ×
               </button>
@@ -438,30 +338,17 @@ export default function ReviewTable({
                 setPage(1);
               }
             }}
-            style={{
-              background: "none",
-              border: "none",
-              outline: "none",
-              color: "var(--text-primary)",
-              fontSize: 13,
-              minWidth: 80,
-              flex: 1,
-              padding: "2px 4px",
-            }}
+            // iOS는 16px 미만 입력창에 포커스하면 화면을 확대하므로 모바일은 text-base
+            className="min-w-20 flex-1 bg-transparent px-1 py-0.5 text-base text-fg outline-none md:text-[13px]"
           />
         </div>
         <select
           value={sentiment}
-          onChange={(e) => { setSentiment(e.target.value as SentimentFilter); setPage(1); }}
-          style={{
-            background: "var(--surface2)",
-            border: "1px solid var(--border)",
-            borderRadius: 8,
-            padding: "6px 12px",
-            color: "var(--text-primary)",
-            fontSize: 13,
-            outline: "none",
+          onChange={(e) => {
+            setSentiment(e.target.value as SentimentFilter);
+            setPage(1);
           }}
+          className={select}
         >
           <option value="all">전체 감성</option>
           <option value="positive">긍정</option>
@@ -474,47 +361,34 @@ export default function ReviewTable({
             setRatingFilter(v === "all" ? "all" : Number(v));
             setPage(1);
           }}
-          style={{
-            background: "var(--surface2)",
-            border: "1px solid var(--border)",
-            borderRadius: 8,
-            padding: "6px 12px",
-            color: "var(--text-primary)",
-            fontSize: 13,
-            outline: "none",
-          }}
+          className={select}
         >
           <option value="all">전체 평점</option>
           {[5, 4, 3, 2, 1].map((s) => (
-            <option key={s} value={s}>★{s}</option>
+            <option key={s} value={s}>
+              ★{s}
+            </option>
           ))}
         </select>
         <label
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            cursor: "pointer",
-            userSelect: "none",
-            fontSize: 13,
-            color: filterShort ? "var(--accent)" : "var(--text-secondary)",
-            fontWeight: filterShort ? 600 : 400,
-            whiteSpace: "nowrap",
-          }}
+          className={`flex cursor-pointer items-center gap-1.5 text-[13px] whitespace-nowrap select-none ${
+            filterShort ? "font-semibold text-accent" : "font-normal text-fg-muted"
+          }`}
         >
           <input
             type="checkbox"
             checked={filterShort}
-            onChange={(e) => { setFilterShort(e.target.checked); setPage(1); }}
-            style={{ accentColor: "var(--accent)", width: 14, height: 14, cursor: "pointer" }}
+            onChange={(e) => {
+              setFilterShort(e.target.checked);
+              setPage(1);
+            }}
+            className="size-3.5 cursor-pointer accent-accent"
           />
           무의미한 리뷰 제거
-          <span style={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 400 }}>
-            ({MIN_LENGTH}자 이상만)
-          </span>
+          <span className="text-[11px] font-normal text-fg-muted">({MIN_LENGTH}자 이상만)</span>
         </label>
-        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+        <div className="flex w-full items-center justify-between gap-2.5 md:ml-auto md:w-auto md:justify-start">
+          <span className="text-[13px] text-fg-muted">
             {selectedPoint !== null
               ? `${pointFiltered.length.toLocaleString()} / ${sorted.length.toLocaleString()}건`
               : `${sorted.length.toLocaleString()}건`}
@@ -522,36 +396,17 @@ export default function ReviewTable({
           <button
             onClick={handleAnalyze}
             disabled={filtered.length === 0 || summary.status === "loading"}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              background: "linear-gradient(135deg, var(--accent), #7c6aff)",
-              border: "none",
-              borderRadius: 8,
-              padding: "6px 14px",
-              color: "#fff",
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: filtered.length === 0 || summary.status === "loading" ? "not-allowed" : "pointer",
-              opacity: filtered.length === 0 ? 0.4 : 1,
-              whiteSpace: "nowrap",
-              transition: "opacity 0.15s",
-            }}
+            className={`flex min-h-10 items-center gap-1.5 rounded-lg bg-accent px-3.5 py-1.5 text-[13px] font-semibold whitespace-nowrap text-white transition-opacity md:min-h-0 ${
+              filtered.length === 0
+                ? "cursor-not-allowed opacity-40"
+                : summary.status === "loading"
+                  ? "cursor-not-allowed"
+                  : "cursor-pointer"
+            }`}
           >
             {summary.status === "loading" ? (
               <>
-                <span
-                  style={{
-                    display: "inline-block",
-                    width: 12,
-                    height: 12,
-                    border: "2px solid rgba(255,255,255,0.4)",
-                    borderTopColor: "#fff",
-                    borderRadius: "50%",
-                    animation: "spin 0.7s linear infinite",
-                  }}
-                />
+                <span className="inline-block size-3 animate-spin rounded-full border-2 border-white/40 border-t-white" />
                 분석 중...
               </>
             ) : (
@@ -563,60 +418,38 @@ export default function ReviewTable({
 
       {/* AI Summary Panel */}
       {summary.status !== "idle" && (
-        <div
-          style={{
-            padding: "16px 24px",
-            borderBottom: "1px solid var(--border)",
-            background: "var(--surface2)",
-          }}
-        >
+        <div className="border-b border-line bg-surface-2 px-4 py-3 md:px-6 md:py-4">
           {summary.status === "loading" && (
-            <div style={{ color: "var(--text-secondary)", fontSize: 13, textAlign: "center", padding: "8px 0" }}>
-              리뷰를 분석하는 중입니다...
-            </div>
+            <div className="py-2 text-center text-[13px] text-fg-muted">리뷰를 분석하는 중입니다...</div>
           )}
           {summary.status === "error" && (
-            <div style={{ color: "var(--negative)", fontSize: 13 }}>
-              오류: {summary.message}
-            </div>
+            <div className="text-[13px] text-negative">오류: {summary.message}</div>
           )}
           {summary.status === "done" && (
             <div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  marginBottom: 14,
-                }}
-              >
-                <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+              <div className="mb-3.5 flex items-center justify-between">
+                <span className="text-xs text-fg-muted">
                   전체 {summary.total.toLocaleString()}개 리뷰 분석
                   {summary.sampled < summary.total && ` (${summary.sampled}개 샘플)`}
                 </span>
                 <button
                   onClick={() => setSummary({ status: "idle" })}
-                  style={{
-                    background: "none",
-                    border: "1px solid var(--border)",
-                    borderRadius: 6,
-                    padding: "2px 10px",
-                    color: "var(--text-secondary)",
-                    fontSize: 12,
-                    cursor: "pointer",
-                  }}
+                  className="cursor-pointer rounded-md border border-line px-2.5 py-0.5 text-xs text-fg-muted"
                 >
                   닫기
                 </button>
               </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+              <div className="flex flex-wrap gap-3">
                 {summary.points.map((point, i) => (
                   <PointCard
                     key={i}
                     point={point}
                     selected={selectedPoint === i}
                     matchCount={pointMatchCounts[i] ?? 0}
-                    onClick={() => { setSelectedPoint(selectedPoint === i ? null : i); setPage(1); }}
+                    onClick={() => {
+                      setSelectedPoint(selectedPoint === i ? null : i);
+                      setPage(1);
+                    }}
                   />
                 ))}
               </div>
@@ -625,47 +458,47 @@ export default function ReviewTable({
         </div>
       )}
 
-      {/* Spinner keyframe */}
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-
-      {/* Table */}
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-          <thead>
-            <tr style={{ background: "var(--surface2)" }}>
+      {/* Table (md 이상) / 카드 목록 (모바일) */}
+      <div className="overflow-x-auto">
+        {/* 모바일은 표 머리글이 없으므로 정렬 버튼을 따로 둔다 */}
+        <div className="flex gap-2 border-b border-line bg-surface-2 px-4 py-2 md:hidden">
+          {(["date", "rating"] as const).map((key) => {
+            const active = sortKey === key;
+            return (
+              <button
+                key={key}
+                onClick={() => toggleSort(key)}
+                className={`min-h-9 flex-1 cursor-pointer rounded-lg border text-[13px] ${
+                  active
+                    ? "border-accent bg-accent font-semibold text-white"
+                    : "border-line bg-surface font-normal text-fg-muted"
+                }`}
+              >
+                {key === "date" ? "날짜" : "평점"} {active ? (sortAsc ? "↑" : "↓") : "↕"}
+              </button>
+            );
+          })}
+        </div>
+        <table className="block w-full border-collapse text-[13px] md:table">
+          <thead className="hidden md:table-header-group">
+            <tr className="bg-surface-2">
               <th
                 onClick={() => toggleSort("date")}
-                style={{
-                  padding: "10px 16px",
-                  textAlign: "left",
-                  color: "var(--text-secondary)",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                  userSelect: "none",
-                }}
+                className="cursor-pointer px-4 py-2.5 text-left font-semibold whitespace-nowrap text-fg-muted select-none"
               >
                 날짜 {sortKey === "date" ? (sortAsc ? "↑" : "↓") : "↕"}
               </th>
               <th
                 onClick={() => toggleSort("rating")}
-                style={{
-                  padding: "10px 16px",
-                  textAlign: "left",
-                  color: "var(--text-secondary)",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                  userSelect: "none",
-                }}
+                className="cursor-pointer px-4 py-2.5 text-left font-semibold whitespace-nowrap text-fg-muted select-none"
               >
                 평점 {sortKey === "rating" ? (sortAsc ? "↑" : "↓") : "↕"}
               </th>
-              <th style={{ padding: "10px 16px", textAlign: "left", color: "var(--text-secondary)", fontWeight: 600 }}>내용</th>
-              <th style={{ padding: "10px 16px", textAlign: "left", color: "var(--text-secondary)", fontWeight: 600 }}>버전</th>
+              <th className="px-4 py-2.5 text-left font-semibold text-fg-muted">내용</th>
+              <th className="px-4 py-2.5 text-left font-semibold text-fg-muted">버전</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="block md:table-row-group">
             {pageReviews.map((r) => (
               <ReviewRow key={r.id} r={r} keywords={keywords} />
             ))}
@@ -675,30 +508,13 @@ export default function ReviewTable({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div
-          style={{
-            padding: "12px 24px",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            gap: 4,
-            borderTop: "1px solid var(--border)",
-            flexWrap: "wrap",
-          }}
-        >
+        <div className="flex flex-wrap items-center justify-center gap-1 border-t border-line p-3 md:px-6">
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
-            style={{
-              background: "var(--surface2)",
-              border: "1px solid var(--border)",
-              borderRadius: 8,
-              padding: "6px 12px",
-              color: page === 1 ? "var(--text-secondary)" : "var(--text-primary)",
-              cursor: page === 1 ? "not-allowed" : "pointer",
-              fontSize: 13,
-              opacity: page === 1 ? 0.4 : 1,
-            }}
+            className={`${pageBtn} border-line bg-surface-2 ${
+              page === 1 ? "cursor-not-allowed text-fg-muted opacity-40" : "cursor-pointer text-fg"
+            }`}
           >
             ‹ 이전
           </button>
@@ -717,22 +533,18 @@ export default function ReviewTable({
             }
             return pages.map((p, i) =>
               p === "..." ? (
-                <span key={`ellipsis-${i}`} style={{ padding: "6px 4px", fontSize: 13, color: "var(--text-secondary)" }}>…</span>
+                <span key={`ellipsis-${i}`} className="px-1 py-1.5 text-[13px] text-fg-muted">
+                  …
+                </span>
               ) : (
                 <button
                   key={p}
                   onClick={() => setPage(p)}
-                  style={{
-                    background: p === page ? "var(--accent)" : "var(--surface2)",
-                    border: `1px solid ${p === page ? "var(--accent)" : "var(--border)"}`,
-                    borderRadius: 8,
-                    padding: "6px 10px",
-                    minWidth: 34,
-                    color: p === page ? "#ffffff" : "var(--text-primary)",
-                    cursor: p === page ? "default" : "pointer",
-                    fontSize: 13,
-                    fontWeight: p === page ? 700 : 400,
-                  }}
+                  className={`min-w-[34px] rounded-lg border px-2.5 py-1.5 text-[13px] ${
+                    p === page
+                      ? "cursor-default border-accent bg-accent font-bold text-white"
+                      : "cursor-pointer border-line bg-surface-2 font-normal text-fg"
+                  }`}
                 >
                   {p}
                 </button>
@@ -742,16 +554,9 @@ export default function ReviewTable({
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
-            style={{
-              background: "var(--surface2)",
-              border: "1px solid var(--border)",
-              borderRadius: 8,
-              padding: "6px 12px",
-              color: page === totalPages ? "var(--text-secondary)" : "var(--text-primary)",
-              cursor: page === totalPages ? "not-allowed" : "pointer",
-              fontSize: 13,
-              opacity: page === totalPages ? 0.4 : 1,
-            }}
+            className={`${pageBtn} border-line bg-surface-2 ${
+              page === totalPages ? "cursor-not-allowed text-fg-muted opacity-40" : "cursor-pointer text-fg"
+            }`}
           >
             다음 ›
           </button>

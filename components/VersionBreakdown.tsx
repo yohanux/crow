@@ -59,148 +59,71 @@ export default function VersionBreakdown({ reviews, selectedVersion, onSelect, b
   const inner = (
     <>
       {/* Header */}
-      <div
-        style={{
-          padding: "16px 24px",
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          borderBottom: "1px solid var(--border)",
-          flexWrap: "wrap",
-        }}
-      >
+      <div className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-3 md:px-6 md:py-4">
         {selectedVersion && (
-          <span
-            style={{
-              fontSize: 12,
-              background: "var(--accent-glow)",
-              color: "var(--accent)",
-              border: "1px solid var(--accent)",
-              borderRadius: 20,
-              padding: "2px 10px",
-              fontWeight: 600,
-            }}
-          >
+          <span className="rounded-full border border-accent bg-accent-glow px-2.5 py-0.5 text-xs font-semibold text-accent">
             v{selectedVersion}
           </span>
         )}
-        <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
+        <div className="ml-auto flex gap-1.5">
           {(["count", "rating", "version"] as const).map((key) => (
             <button
               key={key}
               onClick={() => setSortBy(key)}
-              style={{
-                background: sortBy === key ? "var(--accent)" : "var(--surface2)",
-                border: `1px solid ${sortBy === key ? "var(--accent)" : "var(--border)"}`,
-                borderRadius: 6,
-                padding: "4px 10px",
-                fontSize: 12,
-                color: sortBy === key ? "#fff" : "var(--text-secondary)",
-                cursor: "pointer",
-                fontWeight: sortBy === key ? 600 : 400,
-                transition: "all 0.15s",
-              }}
+              className={`cursor-pointer rounded-md border px-2.5 py-1 text-xs transition-all ${
+                sortBy === key
+                  ? "border-accent bg-accent font-semibold text-white"
+                  : "border-line bg-surface-2 font-normal text-fg-muted"
+              }`}
             >
               {key === "count" ? "리뷰순" : key === "rating" ? "평점순" : "버전순"}
             </button>
           ))}
         </div>
         {selectedVersion && (
-          <button
-            onClick={() => onSelect(null)}
-            style={{
-              background: "transparent",
-              border: "none",
-              color: "var(--text-secondary)",
-              fontSize: 12,
-              cursor: "pointer",
-              textDecoration: "underline",
-              padding: 0,
-            }}
-          >
+          <button onClick={() => onSelect(null)} className="cursor-pointer text-xs text-fg-muted underline">
             필터 해제
           </button>
         )}
       </div>
 
       {/* List */}
-      <div style={{ maxHeight: 360, overflowY: "auto" }}>
+      <div className="max-h-[360px] overflow-y-auto">
         {versions.map((v) => {
           const isSelected = selectedVersion === v.version;
           return (
             <div
               key={v.version}
               onClick={() => onSelect(isSelected ? null : v.version)}
-              style={{
-                padding: "12px 24px",
-                borderBottom: "1px solid var(--border)",
-                cursor: "pointer",
-                background: isSelected ? "rgba(124,106,255,0.07)" : "transparent",
-                transition: "background 0.15s",
-              }}
-              onMouseEnter={(e) => {
-                if (!isSelected) (e.currentTarget as HTMLElement).style.background = "var(--surface2)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.background = isSelected
-                  ? "rgba(124,106,255,0.07)"
-                  : "transparent";
-              }}
+              className={`cursor-pointer border-b border-line px-4 py-3 transition-colors md:px-6 ${
+                isSelected ? "bg-accent/[0.07]" : "bg-transparent hover:bg-surface-2"
+              }`}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              {/* 모바일: 이름·수치는 윗줄, 막대는 아랫줄 / md 이상: 한 줄 */}
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2 md:flex-nowrap">
                 <span
-                  style={{
-                    fontSize: 13,
-                    fontWeight: isSelected ? 700 : 500,
-                    color: isSelected ? "var(--accent)" : "var(--text-primary)",
-                    minWidth: 96,
-                    fontVariantNumeric: "tabular-nums",
-                  }}
+                  className={`min-w-0 flex-1 text-[13px] tabular-nums md:w-24 md:flex-none ${
+                    isSelected ? "font-bold text-accent" : "font-medium text-fg"
+                  }`}
                 >
                   v{v.version}
                 </span>
 
-                {/* Count bar */}
-                <div
-                  style={{
-                    flex: 1,
-                    height: 6,
-                    background: "var(--surface2)",
-                    borderRadius: 3,
-                    overflow: "hidden",
-                  }}
-                >
+                <div className="order-last h-1.5 basis-full overflow-hidden rounded-[3px] bg-surface-2 md:order-none md:flex-1 md:basis-auto">
                   <div
-                    style={{
-                      width: `${(v.count / maxCount) * 100}%`,
-                      height: "100%",
-                      background: isSelected ? "var(--accent)" : "var(--border)",
-                      borderRadius: 3,
-                      transition: "width 0.4s ease, background 0.15s",
-                    }}
+                    className={`h-full rounded-[3px] transition-[width,background-color] duration-[400ms] ease-out ${
+                      isSelected ? "bg-accent" : "bg-line"
+                    }`}
+                    style={{ width: `${(v.count / maxCount) * 100}%` }}
                   />
                 </div>
 
-                <span
-                  style={{
-                    fontSize: 12,
-                    color: "var(--text-secondary)",
-                    minWidth: 44,
-                    textAlign: "right",
-                    fontVariantNumeric: "tabular-nums",
-                  }}
-                >
+                <span className="min-w-11 text-right text-xs text-fg-muted tabular-nums">
                   {v.count.toLocaleString()}건
                 </span>
-                <span style={{ fontSize: 12, color: "#f59e0b", minWidth: 36, textAlign: "right" }}>
-                  ★{v.avgRating}
-                </span>
-                <span style={{ fontSize: 12, color: "var(--positive)", minWidth: 38, textAlign: "right" }}>
-                  +{v.positivePercent}%
-                </span>
-                <span style={{ fontSize: 12, color: "var(--negative)", minWidth: 38, textAlign: "right" }}>
-                  -{v.negativePercent}%
-                </span>
+                <span className="min-w-9 text-right text-xs text-star">★{v.avgRating}</span>
+                <span className="min-w-[38px] text-right text-xs text-positive">+{v.positivePercent}%</span>
+                <span className="min-w-[38px] text-right text-xs text-negative">-{v.negativePercent}%</span>
               </div>
             </div>
           );
@@ -212,16 +135,9 @@ export default function VersionBreakdown({ reviews, selectedVersion, onSelect, b
   if (bare) return inner;
 
   return (
-    <div
-      style={{
-        background: "var(--surface)",
-        border: "1px solid var(--border)",
-        borderRadius: 16,
-        overflow: "hidden",
-      }}
-    >
-      <div style={{ padding: "12px 24px", borderBottom: "1px solid var(--border)" }}>
-        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "var(--text-primary)" }}>버전별 리뷰</h3>
+    <div className="overflow-hidden rounded-2xl border border-line bg-surface">
+      <div className="border-b border-line px-4 py-3 md:px-6">
+        <h3 className="text-[15px] font-semibold text-fg">버전별 리뷰</h3>
       </div>
       {inner}
     </div>

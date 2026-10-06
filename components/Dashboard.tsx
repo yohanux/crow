@@ -30,92 +30,49 @@ export default function Dashboard({ reviews, appInfo, onExport, exporting }: Das
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"trend" | "version">("trend");
 
-  const storeLabel = appInfo.storeType === "appstore" ? "App Store" : "Google Play";
-  const storeBadgeColor = appInfo.storeType === "appstore" ? "#007aff" : "#01875f";
+  const isAppStore = appInfo.storeType === "appstore";
+  const storeLabel = isAppStore ? "App Store" : "Google Play";
+  const storeBadgeClass = isAppStore
+    ? "border-appstore/[0.27] bg-appstore/[0.13] text-appstore"
+    : "border-googleplay/[0.27] bg-googleplay/[0.13] text-googleplay";
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+    <div className="flex flex-col gap-4 md:gap-6">
       {/* App header */}
-      <div
-        style={{
-          background: "var(--surface)",
-          border: "1px solid var(--border)",
-          borderRadius: 16,
-          padding: "20px 24px",
-          display: "flex",
-          alignItems: "center",
-          gap: 20,
-          flexWrap: "wrap",
-        }}
-      >
+      <div className="flex flex-wrap items-center gap-3.5 rounded-2xl border border-line bg-surface p-4 md:gap-5 md:px-6 md:py-5">
         {appInfo.icon && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={appInfo.icon}
-            alt="app icon"
-            style={{ width: 64, height: 64, borderRadius: 16, objectFit: "cover" }}
-          />
+          <img src={appInfo.icon} alt="app icon" className="size-16 rounded-2xl object-cover" />
         )}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4, flexWrap: "wrap" }}>
-            <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: "var(--text-primary)" }}>
-              {appInfo.title}
-            </h2>
-            <span
-              style={{
-                background: storeBadgeColor + "22",
-                color: storeBadgeColor,
-                border: `1px solid ${storeBadgeColor}44`,
-                borderRadius: 6,
-                padding: "2px 8px",
-                fontSize: 12,
-                fontWeight: 600,
-              }}
-            >
+        <div className="min-w-0 flex-1">
+          <div className="mb-1 flex flex-wrap items-center gap-2.5">
+            <h2 className="text-xl font-bold text-fg">{appInfo.title}</h2>
+            <span className={`rounded-md border px-2 py-0.5 text-xs font-semibold ${storeBadgeClass}`}>
               {storeLabel}
             </span>
           </div>
-          <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+          <span className="text-[13px] text-fg-muted">
             {appInfo.developer} &nbsp;·&nbsp; 스토어 평점 ★{appInfo.score.toFixed(1)}
           </span>
           {reviewYearRange && (
-            <div style={{ marginTop: 8, fontSize: 28, fontWeight: 800, color: "var(--accent)", letterSpacing: "-1px", lineHeight: 1 }}>
+            <div className="mt-2 text-[28px] leading-none font-extrabold tracking-tight text-accent">
               {reviewYearRange}
             </div>
           )}
         </div>
-        <div style={{ display: "flex", gap: 12, alignItems: "center", flexShrink: 0 }}>
+        <div className="flex w-full items-center gap-3 md:w-auto md:shrink-0">
           <a
             href={appInfo.storeUrl}
             target="_blank"
             rel="noopener noreferrer"
-            style={{
-              background: "var(--surface2)",
-              border: "1px solid var(--border)",
-              borderRadius: 10,
-              padding: "8px 16px",
-              fontSize: 13,
-              color: "var(--text-secondary)",
-              textDecoration: "none",
-              fontWeight: 500,
-            }}
+            className="flex-1 rounded-[10px] border border-line bg-surface-2 px-4 py-2 text-center text-[13px] font-medium text-fg-muted no-underline md:flex-none"
           >
             스토어 열기 ↗
           </a>
           <button
             onClick={onExport}
             disabled={exporting}
-            style={{
-              background: "var(--accent)",
-              border: "none",
-              borderRadius: 10,
-              padding: "8px 20px",
-              fontSize: 13,
-              color: "#fff",
-              fontWeight: 600,
-              cursor: exporting ? "not-allowed" : "pointer",
-              opacity: exporting ? 0.7 : 1,
-            }}
+            className="flex-1 cursor-pointer rounded-[10px] bg-accent px-5 py-2 text-[13px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70 md:flex-none"
           >
             {exporting ? "내보내는 중..." : "엑셀 내보내기"}
           </button>
@@ -123,25 +80,9 @@ export default function Dashboard({ reviews, appInfo, onExport, exporting }: Das
       </div>
 
       {/* Stat cards */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: 16,
-        }}
-      >
-        <StatCard
-          label="총 리뷰 수"
-          value={stats.total.toLocaleString()}
-          sub="수집된 전체 리뷰"
-          color="var(--accent)"
-        />
-        <StatCard
-          label="평균 평점"
-          value={`★ ${stats.avgRating}`}
-          sub="전체 리뷰 기준"
-          color="#f59e0b"
-        />
+      <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4 md:gap-4">
+        <StatCard label="총 리뷰 수" value={stats.total.toLocaleString()} sub="수집된 전체 리뷰" color="var(--accent)" />
+        <StatCard label="평균 평점" value={`★ ${stats.avgRating}`} sub="전체 리뷰 기준" color="#f59e0b" />
         <StatCard
           label="긍정 비율"
           value={`${stats.positivePercent}%`}
@@ -157,33 +98,15 @@ export default function Dashboard({ reviews, appInfo, onExport, exporting }: Das
       </div>
 
       {/* Charts row */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
         <RatingBar data={stats.ratingDist} />
-        <SentimentChart
-          positive={stats.positiveCount}
-          negative={stats.negativeCount}
-        />
+        <SentimentChart positive={stats.positiveCount} negative={stats.negativeCount} />
       </div>
 
       {/* Trend / Version tabbed card */}
-      <div
-        style={{
-          background: "var(--surface)",
-          border: "1px solid var(--border)",
-          borderRadius: 16,
-          overflow: "hidden",
-        }}
-      >
+      <div className="overflow-hidden rounded-2xl border border-line bg-surface">
         {/* Tab header */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 0,
-            borderBottom: "1px solid var(--border)",
-            padding: "0 24px",
-          }}
-        >
+        <div className="flex items-center border-b border-line px-2 md:px-6">
           {(["trend", "version"] as const).map((tab) => {
             const label = tab === "trend" ? "월별 리뷰 추세" : "버전별 리뷰";
             const active = activeTab === tab;
@@ -191,18 +114,11 @@ export default function Dashboard({ reviews, appInfo, onExport, exporting }: Das
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  borderBottom: active ? "2px solid var(--accent)" : "2px solid transparent",
-                  padding: "14px 16px 12px",
-                  fontSize: 14,
-                  fontWeight: active ? 700 : 400,
-                  color: active ? "var(--accent)" : "var(--text-secondary)",
-                  cursor: "pointer",
-                  transition: "color 0.15s, border-color 0.15s",
-                  marginBottom: -1,
-                }}
+                className={`-mb-px cursor-pointer border-b-2 px-4 pt-3.5 pb-3 text-sm transition-colors ${
+                  active
+                    ? "border-accent font-bold text-accent"
+                    : "border-transparent font-normal text-fg-muted"
+                }`}
               >
                 {label}
               </button>
@@ -211,15 +127,10 @@ export default function Dashboard({ reviews, appInfo, onExport, exporting }: Das
         </div>
 
         {/* Content — both mounted to preserve state */}
-        <div style={{ display: activeTab === "trend" ? "block" : "none" }}>
-          <TrendChart
-            bare
-            data={stats.trend}
-            selectedMonth={selectedMonth}
-            onMonthClick={setSelectedMonth}
-          />
+        <div className={activeTab === "trend" ? "block" : "hidden"}>
+          <TrendChart bare data={stats.trend} selectedMonth={selectedMonth} onMonthClick={setSelectedMonth} />
         </div>
-        <div style={{ display: activeTab === "version" ? "block" : "none" }}>
+        <div className={activeTab === "version" ? "block" : "hidden"}>
           <VersionBreakdown
             bare
             reviews={reviews}

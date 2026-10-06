@@ -53,38 +53,22 @@ export default function TrendChart({ data, selectedMonth, onMonthClick, bare }: 
   const showRatingAxis = visible.avgRating;
 
   const content = (
-    <div style={{ padding: "20px 24px" }}>
+    <div className="px-2 pt-4 pb-3 md:px-6 md:py-5">
       {selectedMonth && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
-          <span
-            style={{
-              fontSize: 12,
-              background: "var(--accent-glow)",
-              color: "var(--accent)",
-              border: "1px solid var(--accent)",
-              borderRadius: 20,
-              padding: "2px 10px",
-              fontWeight: 600,
-            }}
-          >
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <span className="rounded-full border border-accent bg-accent-glow px-2.5 py-0.5 text-xs font-semibold text-accent">
             {selectedMonth}
           </span>
           <button
             onClick={() => onMonthClick(null)}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              color: "var(--text-secondary)",
-              fontSize: 13,
-              padding: "2px 6px",
-            }}
+            className="cursor-pointer px-1.5 py-0.5 text-[13px] text-fg-muted"
           >
             ✕ 해제
           </button>
         </div>
       )}
-      <ResponsiveContainer width="100%" height={280}>
+      <div className="h-[220px] md:h-[280px]">
+      <ResponsiveContainer width="100%" height="100%">
         <ComposedChart
           data={data}
           margin={{ top: 4, right: 16, left: 0, bottom: 0 }}
@@ -94,6 +78,7 @@ export default function TrendChart({ data, selectedMonth, onMonthClick, bare }: 
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
           <XAxis
             dataKey="month"
+            minTickGap={16}
             tick={{ fill: "var(--text-secondary)", fontSize: 11 }}
             axisLine={false}
             tickLine={false}
@@ -173,27 +158,22 @@ export default function TrendChart({ data, selectedMonth, onMonthClick, bare }: 
           )}
         </ComposedChart>
       </ResponsiveContainer>
-      <div style={{ display: "flex", justifyContent: "center", gap: 20, marginTop: 12 }}>
+      </div>
+      <div className="mt-3 flex flex-wrap justify-center gap-5">
         {SERIES.map(({ key, label, color }) => (
           <label
             key={key}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 5,
-              cursor: "pointer",
-              userSelect: "none",
-              fontSize: 12,
-              color: visible[key] ? color : "var(--text-secondary)",
-              fontWeight: visible[key] ? 600 : 400,
-              transition: "color 0.15s",
-            }}
+            className={`flex cursor-pointer items-center gap-[5px] text-xs transition-colors select-none ${
+              visible[key] ? "font-semibold" : "font-normal text-fg-muted"
+            }`}
+            style={visible[key] ? { color } : undefined}
           >
             <input
               type="checkbox"
               checked={visible[key]}
               onChange={() => toggleSeries(key)}
-              style={{ accentColor: color, width: 13, height: 13, cursor: "pointer" }}
+              className="size-[13px] cursor-pointer"
+              style={{ accentColor: color }}
             />
             {label}
           </label>
@@ -205,18 +185,9 @@ export default function TrendChart({ data, selectedMonth, onMonthClick, bare }: 
   if (bare) return content;
 
   return (
-    <div
-      style={{
-        background: "var(--surface)",
-        border: "1px solid var(--border)",
-        borderRadius: 16,
-        overflow: "hidden",
-      }}
-    >
-      <div style={{ padding: "16px 24px", borderBottom: "1px solid var(--border)" }}>
-        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "var(--text-primary)" }}>
-          월별 리뷰 추세
-        </h3>
+    <div className="overflow-hidden rounded-2xl border border-line bg-surface">
+      <div className="border-b border-line px-4 py-3 md:px-6 md:py-4">
+        <h3 className="text-[15px] font-semibold text-fg">월별 리뷰 추세</h3>
       </div>
       {content}
     </div>

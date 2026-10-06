@@ -276,81 +276,35 @@ export default function Home() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--background)" }}>
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header
-        style={{
-          borderBottom: "1px solid var(--border)",
-          background: "var(--surface)",
-          padding: "0 32px",
-          display: "flex",
-          alignItems: "center",
-          height: 60,
-          gap: 16,
-          position: "sticky",
-          top: 0,
-          zIndex: 100,
-        }}
-      >
-        <button
-          onClick={handleReset}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            background: "none",
-            border: "none",
-            padding: 0,
-            cursor: "pointer",
-          }}
-        >
+      <header className="sticky top-0 z-[100] flex h-[60px] items-center gap-4 border-b border-line bg-surface px-4 md:px-8">
+        <button onClick={handleReset} className="flex cursor-pointer items-center gap-2.5 p-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/brand/stoview-logo-purple.svg" alt="Stoview" width={28} height={28} />
-          <span style={{ fontFamily: "var(--font-logo)", fontSize: 18, fontWeight: 700, color: "var(--text-primary)", letterSpacing: "-0.5px" }}>
-            STOVIEW
-          </span>
+          <span className="font-logo text-lg font-bold tracking-tight text-fg">STOVIEW</span>
         </button>
       </header>
 
-      <main style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px 160px" }}>
+      <main className="mx-auto max-w-[1200px] px-3 pb-24 md:px-6 md:pb-40">
         {status !== "done" && (
           <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              paddingTop: status === "idle" ? 80 : 56,
-              paddingBottom: status === "idle" ? 48 : 40,
-              gap: 24,
-            }}
+            className={`flex flex-col items-center gap-6 ${
+              status === "idle" ? "pt-10 pb-8 md:pt-20 md:pb-12" : "pt-7 pb-6 md:pt-14 md:pb-10"
+            }`}
           >
             {status === "idle" && (
-              <div style={{ textAlign: "center" }}>
-                <h1
-                  style={{
-                    fontFamily: "var(--font-logo)",
-                    fontSize: 64,
-                    fontWeight: 700,
-                    color: "#ffffff",
-                    margin: "0 0 12px",
-                    letterSpacing: "-1.5px",
-                    lineHeight: 1.15,
-                  }}
-                >
+              <div className="text-center">
+                <h1 className="mb-3 font-logo text-[clamp(40px,14vw,56px)] leading-[1.15] font-bold tracking-[-1.5px] text-white md:text-[64px]">
                   STOVIEW
                 </h1>
-                <p style={{ fontSize: 18, color: "var(--text-secondary)", margin: 0 }}>
-                  스토어 리뷰 분석
-                </p>
+                <p className="m-0 text-base text-fg-muted md:text-lg">스토어 리뷰 분석</p>
               </div>
             )}
 
-            <form
-              onSubmit={handleSubmit}
-              style={{ display: "flex", gap: 16, width: "100%", maxWidth: 680, flexDirection: "column" }}
-            >
+            <form onSubmit={handleSubmit} className="flex w-full max-w-[680px] flex-col gap-4">
               {/* URL + button */}
-              <div style={{ display: "flex", gap: 12, position: "relative" }}>
+              <div className="relative flex gap-3">
                 <input
                   type="text"
                   value={selectedApp ? selectedApp.title : url}
@@ -359,70 +313,26 @@ export default function Home() {
                     setUrl(e.target.value);
                     setSearchOpen(true);
                   }}
+                  onFocus={() => setSearchOpen(true)}
                   placeholder="앱 이름 검색 또는 주소 붙여넣기"
                   required
                   disabled={status === "loading"}
-                  style={{
-                    flex: 1,
-                    background: "var(--surface)",
-                    border: "1.5px solid var(--border)",
-                    borderRadius: 12,
-                    padding: "14px 18px",
-                    color: "var(--text-primary)",
-                    fontSize: 14,
-                    outline: "none",
-                    transition: "border-color 0.2s",
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = "var(--accent)";
-                    setSearchOpen(true);
-                  }}
-                  onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
+                  // iOS는 16px 미만 입력창에 포커스하면 화면을 확대하므로 모바일은 text-base
+                  className="flex-1 rounded-xl border-[1.5px] border-line bg-surface px-[18px] py-3.5 text-base text-fg transition-colors outline-none focus:border-accent md:text-sm"
                 />
                 <button
                   type="submit"
                   disabled={status === "loading" || !url.trim() || isSearchQuery}
-                  style={{
-                    background: "var(--accent)",
-                    border: "none",
-                    borderRadius: 12,
-                    padding: "14px 28px",
-                    color: "#fff",
-                    fontWeight: 700,
-                    fontSize: 14,
-                    cursor: status === "loading" ? "not-allowed" : "pointer",
-                    opacity: status === "loading" || !url.trim() || isSearchQuery ? 0.6 : 1,
-                    whiteSpace: "nowrap",
-                    flexShrink: 0,
-                  }}
+                  className="shrink-0 cursor-pointer rounded-xl bg-accent px-[18px] py-3.5 text-sm font-bold whitespace-nowrap text-white disabled:cursor-not-allowed disabled:opacity-60 md:px-7"
                 >
                   {status === "loading" ? "수집 중..." : "분석 시작"}
                 </button>
+
                 {searchOpen && isSearchQuery && status !== "loading" && (
                   <>
-                    <div
-                      onClick={() => setSearchOpen(false)}
-                      style={{ position: "fixed", inset: 0, zIndex: 40 }}
-                    />
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: "calc(100% + 8px)",
-                        left: 0,
-                        right: 0,
-                        zIndex: 50,
-                        background: "var(--surface)",
-                        border: "1px solid var(--border)",
-                        borderRadius: 12,
-                        boxShadow: "0 12px 32px rgba(0,0,0,0.35)",
-                        maxHeight: 560,
-                        overflowY: "auto",
-                        padding: 8,
-                      }}
-                    >
-                      {!searchResults && (
-                        <div style={{ padding: 16, fontSize: 13, color: "var(--text-secondary)" }}>검색 중...</div>
-                      )}
+                    <div onClick={() => setSearchOpen(false)} className="fixed inset-0 z-40" />
+                    <div className="absolute inset-x-0 top-[calc(100%+8px)] z-50 max-h-[60vh] overflow-y-auto rounded-xl border border-line bg-surface p-2 shadow-[0_12px_32px_rgba(0,0,0,0.35)] md:max-h-[560px]">
+                      {!searchResults && <div className="p-4 text-[13px] text-fg-muted">검색 중...</div>}
                       {searchResults &&
                         (["appstore", "googleplay"] as const).map((type) => {
                           const list = searchResults[type];
@@ -430,12 +340,9 @@ export default function Home() {
                           return (
                             <div key={type}>
                               <div
-                                style={{
-                                  padding: "8px 10px 4px",
-                                  fontSize: 11,
-                                  fontWeight: 700,
-                                  color: type === "appstore" ? "#007aff" : "#01875f",
-                                }}
+                                className={`px-2.5 pt-2 pb-1 text-[11px] font-bold ${
+                                  type === "appstore" ? "text-appstore" : "text-googleplay"
+                                }`}
                               >
                                 {type === "appstore" ? "App Store" : "Google Play"}
                               </div>
@@ -444,55 +351,16 @@ export default function Home() {
                                   key={r.url}
                                   type="button"
                                   onClick={() => handleSelectApp(r)}
-                                  className="search-item"
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 12,
-                                    width: "100%",
-                                    padding: "8px 10px",
-                                    background: "transparent",
-                                    border: "none",
-                                    borderRadius: 8,
-                                    cursor: "pointer",
-                                    textAlign: "left",
-                                  }}
+                                  className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2 text-left hover:bg-surface-2"
                                 >
                                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img
-                                    src={r.icon}
-                                    alt=""
-                                    style={{ width: 40, height: 40, borderRadius: 9, flexShrink: 0, background: "var(--surface2)" }}
-                                  />
-                                  <div style={{ minWidth: 0, flex: 1 }}>
-                                    <div
-                                      style={{
-                                        fontSize: 14,
-                                        fontWeight: 600,
-                                        color: "var(--text-primary)",
-                                        overflow: "hidden",
-                                        textOverflow: "ellipsis",
-                                        whiteSpace: "nowrap",
-                                      }}
-                                    >
-                                      {r.title}
-                                    </div>
-                                    <div
-                                      style={{
-                                        fontSize: 12,
-                                        color: "var(--text-secondary)",
-                                        overflow: "hidden",
-                                        textOverflow: "ellipsis",
-                                        whiteSpace: "nowrap",
-                                      }}
-                                    >
-                                      {r.developer}
-                                    </div>
+                                  <img src={r.icon} alt="" className="size-10 shrink-0 rounded-[9px] bg-surface-2" />
+                                  <div className="min-w-0 flex-1">
+                                    <div className="truncate text-sm font-semibold text-fg">{r.title}</div>
+                                    <div className="truncate text-xs text-fg-muted">{r.developer}</div>
                                   </div>
                                   {r.score > 0 && (
-                                    <div style={{ fontSize: 12, color: "var(--text-secondary)", flexShrink: 0 }}>
-                                      ★ {r.score.toFixed(1)}
-                                    </div>
+                                    <div className="shrink-0 text-xs text-fg-muted">★ {r.score.toFixed(1)}</div>
                                   )}
                                 </button>
                               ))}
@@ -500,7 +368,7 @@ export default function Home() {
                           );
                         })}
                       {searchResults && searchResults.appstore.length === 0 && searchResults.googleplay.length === 0 && (
-                        <div style={{ padding: 16, fontSize: 13, color: "var(--text-secondary)" }}>검색 결과가 없습니다.</div>
+                        <div className="p-4 text-[13px] text-fg-muted">검색 결과가 없습니다.</div>
                       )}
                     </div>
                   </>
@@ -508,14 +376,7 @@ export default function Home() {
               </div>
 
               {/* Year range slider */}
-              <div
-                style={{
-                  background: "var(--surface)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 12,
-                  padding: "16px 20px 20px",
-                }}
-              >
+              <div className="rounded-xl border border-line bg-surface px-5 pt-4 pb-5">
                 <YearRangeSlider
                   min={MIN_YEAR}
                   max={MAX_YEAR}
@@ -523,179 +384,80 @@ export default function Home() {
                   onChange={setYearRange}
                   disabled={status === "loading"}
                 />
-                <div style={{ marginTop: 10, display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
+                <div className="mt-2.5 flex items-center justify-end">
                   {!isAllYears && (
                     <button
                       type="button"
                       onClick={() => setYearRange([MIN_YEAR, MAX_YEAR])}
-                      style={{
-                        background: "transparent",
-                        border: "none",
-                        color: "var(--text-secondary)",
-                        fontSize: 12,
-                        cursor: "pointer",
-                        padding: "2px 6px",
-                        textDecoration: "underline",
-                        flexShrink: 0,
-                      }}
+                      className="shrink-0 cursor-pointer px-1.5 py-0.5 text-xs text-fg-muted underline"
                     >
                       초기화
                     </button>
                   )}
                 </div>
               </div>
-
             </form>
 
             {/* Loading state */}
             {status === "loading" && (
-              <div style={{ width: "100%", maxWidth: 680 }}>
+              <div className="w-full max-w-[680px]">
                 {liveAppInfo && (
-                  <div
-                    style={{
-                      background: "var(--surface)",
-                      border: "1px solid var(--border)",
-                      borderRadius: 12,
-                      padding: "14px 18px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 14,
-                      marginBottom: 12,
-                    }}
-                  >
+                  <div className="mb-3 flex items-center gap-3.5 rounded-xl border border-line bg-surface px-[18px] py-3.5">
                     {liveAppInfo.icon && (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={liveAppInfo.icon} alt="icon" style={{ width: 44, height: 44, borderRadius: 10 }} />
+                      <img src={liveAppInfo.icon} alt="icon" className="size-11 rounded-[10px]" />
                     )}
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: 14, color: "var(--text-primary)" }}>
-                        {liveAppInfo.title}
-                      </div>
-                      <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>{liveAppInfo.developer}</div>
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-fg">{liveAppInfo.title}</div>
+                      <div className="text-xs text-fg-muted">{liveAppInfo.developer}</div>
                     </div>
                     {!isAllYears && (
-                      <div
-                        style={{
-                          marginLeft: "auto",
-                          fontSize: 12,
-                          fontWeight: 700,
-                          color: "var(--accent)",
-                          background: "var(--accent-glow)",
-                          padding: "3px 10px",
-                          borderRadius: 6,
-                          flexShrink: 0,
-                        }}
-                      >
+                      <div className="ml-auto shrink-0 rounded-md bg-accent-glow px-2.5 py-[3px] text-xs font-bold text-accent">
                         {yearRange[0]} ~ {yearRange[1]}
                       </div>
                     )}
                   </div>
                 )}
 
-                <div
-                  style={{
-                    background: "var(--surface)",
-                    border: "1px solid var(--border)",
-                    borderRadius: 12,
-                    padding: "20px 24px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 14,
-                    alignItems: "center",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, width: "100%" }}>
-                    <div style={{ position: "relative", width: 28, height: 28, flexShrink: 0 }}>
-                      <div
-                        style={{
-                          position: "absolute",
-                          inset: 0,
-                          borderRadius: "50%",
-                          border: "2.5px solid var(--border)",
-                        }}
-                      />
-                      <div
-                        style={{
-                          position: "absolute",
-                          inset: 0,
-                          borderRadius: "50%",
-                          border: "2.5px solid transparent",
-                          borderTopColor: "var(--accent)",
-                          animation: "spin 0.8s linear infinite",
-                        }}
-                      />
+                <div className="flex flex-col items-center gap-3.5 rounded-xl border border-line bg-surface px-6 py-5">
+                  <div className="flex w-full items-center gap-3">
+                    <div className="relative size-7 shrink-0">
+                      <div className="absolute inset-0 rounded-full border-[2.5px] border-line" />
+                      <div className="absolute inset-0 animate-spin rounded-full border-[2.5px] border-transparent border-t-accent" />
                     </div>
-                    <div style={{ flex: 1, fontSize: 13, color: "var(--text-primary)", fontWeight: 500 }}>
-                      {progressMsg}
-                    </div>
+                    <div className="flex-1 text-[13px] font-medium text-fg">{progressMsg}</div>
                     {progressCount > 0 && (
-                      <div
-                        style={{
-                          fontSize: 22,
-                          fontWeight: 700,
-                          color: "var(--accent)",
-                          fontVariantNumeric: "tabular-nums",
-                          flexShrink: 0,
-                        }}
-                      >
+                      <div className="shrink-0 text-[22px] font-bold text-accent tabular-nums">
                         {progressCount.toLocaleString()}개
                       </div>
                     )}
                   </div>
 
-                  <div
-                    style={{
-                      width: "100%",
-                      height: 4,
-                      background: "var(--surface2)",
-                      borderRadius: 2,
-                      overflow: "hidden",
-                    }}
-                  >
-                    <div
-                      style={{
-                        height: "100%",
-                        background: "var(--accent)",
-                        borderRadius: 2,
-                        animation: "indeterminate 1.6s ease-in-out infinite",
-                      }}
-                    />
+                  <div className="h-1 w-full overflow-hidden rounded-sm bg-surface-2">
+                    <div className="h-full animate-indeterminate rounded-sm bg-accent" />
                   </div>
 
-                  <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: 0, textAlign: "center" }}>
+                  <p className="m-0 text-center text-xs text-fg-muted">
                     {!isAllYears
                       ? `${yearRange[0]}~${yearRange[1]}년 범위 — 기간을 벗어난 리뷰를 만나면 자동으로 멈춥니다`
                       : liveAppInfo?.storeType === "googleplay"
-                      ? "구글플레이는 토큰이 끊길 때까지 전체 리뷰를 수집합니다"
-                      : "앱스토어는 공개 API 기준 최대 ~1,000개까지 수집됩니다"}
+                        ? "구글플레이는 토큰이 끊길 때까지 전체 리뷰를 수집합니다"
+                        : "앱스토어는 공개 API 기준 최대 ~1,000개까지 수집됩니다"}
                   </p>
                 </div>
               </div>
             )}
 
             {status === "error" && (
-              <div
-                style={{
-                  background: "#ef444420",
-                  border: "1px solid #ef444440",
-                  borderRadius: 12,
-                  padding: "14px 20px",
-                  color: "var(--negative)",
-                  fontSize: 14,
-                  maxWidth: 680,
-                  width: "100%",
-                  textAlign: "center",
-                }}
-              >
+              <div className="w-full max-w-[680px] rounded-xl border border-negative/25 bg-negative/[0.13] px-5 py-3.5 text-center text-sm text-negative">
                 {errorMsg}
               </div>
             )}
-
           </div>
         )}
 
         {status === "done" && result && (
-          <div style={{ paddingTop: 32 }}>
+          <div className="pt-8">
             <Dashboard
               reviews={result.reviews}
               appInfo={result.appInfo}
@@ -705,16 +467,6 @@ export default function Home() {
           </div>
         )}
       </main>
-
-      <style>{`
-        .search-item:hover { background: var(--surface2) !important; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes indeterminate {
-          0%   { width: 0%;   margin-left: 0%; }
-          50%  { width: 60%;  margin-left: 20%; }
-          100% { width: 0%;   margin-left: 100%; }
-        }
-      `}</style>
     </div>
   );
 }

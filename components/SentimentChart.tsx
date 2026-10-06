@@ -19,17 +19,8 @@ export default function SentimentChart({ positive, negative }: Props) {
   ].filter((d) => d.value > 0);
 
   return (
-    <div
-      style={{
-        background: "var(--surface)",
-        border: "1px solid var(--border)",
-        borderRadius: 16,
-        padding: "20px 24px",
-      }}
-    >
-      <h3 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 600, color: "var(--text-primary)" }}>
-        감성 분포
-      </h3>
+    <div className="rounded-2xl border border-line bg-surface p-4 md:px-6 md:py-5">
+      <h3 className="mb-4 text-[15px] font-semibold text-fg">감성 분포</h3>
       <ResponsiveContainer width="100%" height={200}>
         <PieChart>
           <Pie

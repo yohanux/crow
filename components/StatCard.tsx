@@ -4,42 +4,21 @@ interface StatCardProps {
   label: string;
   value: string | number;
   sub?: string;
+  /** 상단 강조선 색상 (데이터가 아닌 호출부에서 정하는 토큰/색) */
   color?: string;
   icon?: React.ReactNode;
 }
 
 export default function StatCard({ label, value, sub, color = "var(--accent)", icon }: StatCardProps) {
   return (
-    <div
-      style={{
-        background: "var(--surface)",
-        border: "1px solid var(--border)",
-        borderRadius: 16,
-        padding: "20px 24px",
-        display: "flex",
-        flexDirection: "column",
-        gap: 6,
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 3,
-          background: color,
-          borderRadius: "16px 16px 0 0",
-        }}
-      />
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+    <div className="relative flex flex-col gap-1.5 overflow-hidden rounded-2xl border border-line bg-surface p-3.5 md:px-6 md:py-5">
+      <div className="absolute inset-x-0 top-0 h-[3px] rounded-t-2xl" style={{ background: color }} />
+      <div className="flex items-center gap-2">
         {icon && <span style={{ color }}>{icon}</span>}
-        <span style={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 500 }}>{label}</span>
+        <span className="text-[13px] font-medium text-fg-muted">{label}</span>
       </div>
-      <span style={{ fontSize: 32, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.2 }}>{value}</span>
-      {sub && <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>{sub}</span>}
+      <span className="text-2xl leading-tight font-bold text-fg md:text-[32px]">{value}</span>
+      {sub && <span className="text-[13px] text-fg-muted">{sub}</span>}
     </div>
   );
 }

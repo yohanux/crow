@@ -4,43 +4,21 @@ import { RatingDistribution } from "@/lib/types";
 
 export default function RatingBar({ data }: { data: RatingDistribution[] }) {
   return (
-    <div
-      style={{
-        background: "var(--surface)",
-        border: "1px solid var(--border)",
-        borderRadius: 16,
-        padding: "20px 24px",
-      }}
-    >
-      <h3 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 600, color: "var(--text-primary)" }}>
-        평점 분포
-      </h3>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+    <div className="rounded-2xl border border-line bg-surface p-4 md:px-6 md:py-5">
+      <h3 className="mb-4 text-[15px] font-semibold text-fg">평점 분포</h3>
+      <div className="flex flex-col gap-2.5">
         {data.map((d) => (
-          <div key={d.star} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 13, color: "var(--text-secondary)", width: 24, textAlign: "right" }}>
-              ★{d.star}
-            </span>
-            <div
-              style={{
-                flex: 1,
-                height: 8,
-                background: "var(--surface2)",
-                borderRadius: 4,
-                overflow: "hidden",
-              }}
-            >
+          <div key={d.star} className="flex items-center gap-2.5">
+            <span className="w-6 text-right text-[13px] text-fg-muted">★{d.star}</span>
+            <div className="h-2 flex-1 overflow-hidden rounded bg-surface-2">
               <div
-                style={{
-                  width: `${d.percent}%`,
-                  height: "100%",
-                  background: d.star >= 4 ? "var(--positive)" : "var(--negative)",
-                  borderRadius: 4,
-                  transition: "width 0.6s ease",
-                }}
+                className={`h-full rounded transition-[width] duration-[600ms] ease-out ${
+                  d.star >= 4 ? "bg-positive" : "bg-negative"
+                }`}
+                style={{ width: `${d.percent}%` }}
               />
             </div>
-            <span style={{ fontSize: 12, color: "var(--text-secondary)", width: 48, textAlign: "right" }}>
+            <span className="min-w-[76px] text-right text-xs whitespace-nowrap text-fg-muted">
               {d.count.toLocaleString()} ({d.percent}%)
             </span>
           </div>

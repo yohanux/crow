@@ -4,7 +4,7 @@ import "./globals.css";
 
 const doto = localFont({
   src: "./fonts/Doto.ttf",
-  variable: "--font-logo",
+  variable: "--font-doto",
   weight: "100 900",
 });
 

@@ -14,8 +14,35 @@
   --neutral: #f59e0b;
 }
 
-* {
-  box-sizing: border-box;
+/* 디자인 토큰 → Tailwind 유틸리티 (bg-surface, text-fg-muted, border-line, text-accent …) */
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface2);
+  --color-line: var(--border);
+  --color-fg: var(--text-primary);
+  --color-fg-muted: var(--text-secondary);
+  --color-accent: var(--accent);
+  --color-accent-glow: var(--accent-glow);
+  --color-positive: var(--positive);
+  --color-negative: var(--negative);
+  --color-neutral: var(--neutral);
+  --color-star: #f59e0b;
+  --color-appstore: #007aff;
+  --color-googleplay: #01875f;
+
+  --font-logo: var(--font-doto);
+
+  --animate-indeterminate: indeterminate 1.6s ease-in-out infinite;
+  @keyframes indeterminate {
+    0% { width: 0%; margin-left: 0%; }
+    50% { width: 60%; margin-left: 20%; }
+    100% { width: 0%; margin-left: 100%; }
+  }
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -24,6 +51,13 @@ body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   margin: 0;
   padding: 0;
+}
+
+button,
+a,
+label,
+select {
+  touch-action: manipulation;
 }
 
 ::-webkit-scrollbar {
