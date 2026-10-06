@@ -52,3 +52,12 @@ export interface DashboardStats {
   ratingDist: RatingDistribution[];
   trend: TrendPoint[];
 }
+
+export interface SearchResult {
+  title: string;
+  icon: string;
+  developer: string;
+  score: number;
+  storeType: StoreType;
+  url: string;
+}

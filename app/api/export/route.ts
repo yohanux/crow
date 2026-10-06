@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
   XLSX.utils.book_append_sheet(wb, trendWs, "월별 추세");
 
   const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
-  const filename = `crow_${appInfo.title.replace(/[^\w가-힣]/g, "_")}_${format(new Date(), "yyyyMMdd")}.xlsx`;
+  const filename = `stoview_${appInfo.title.replace(/[^\w가-힣]/g, "_")}_${format(new Date(), "yyyyMMdd")}.xlsx`;
 
   return new NextResponse(buf, {
     headers: {
