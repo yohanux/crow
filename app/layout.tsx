@@ -9,7 +9,7 @@ const logoFont = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Stoview — 앱 리뷰 분석 대시보드",
+  title: "스토뷰 - 스토어 리뷰 분석",
   description: "앱스토어 & 구글플레이 리뷰를 한 눈에 분석하세요",
 };
 

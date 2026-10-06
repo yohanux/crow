@@ -102,10 +102,10 @@ export default function Home() {
   // result 변경 시 IndexedDB에 저장 + 탭 제목 업데이트
   useEffect(() => {
     if (!result) {
-      document.title = "Stoview — 앱 리뷰 분석 대시보드";
+      document.title = "스토뷰 - 스토어 리뷰 분석";
       return;
     }
-    document.title = `Stoview - ${result.appInfo.title} 리뷰`;
+    document.title = `스토뷰 - ${result.appInfo.title} 리뷰`;
     idbSave(result, url).catch(() => {});
   }, [result, url]);
 
@@ -268,7 +268,7 @@ export default function Home() {
           >
             {status === "idle" && (
               <div className="text-center">
-                <div className="mb-3 flex flex-col items-center justify-center gap-2 md:gap-3">
+                <div className="mb-3 flex flex-col items-center justify-center gap-1 md:gap-2">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src="/brand/stoview-logo-purple.svg"
