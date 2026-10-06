@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 
-const doto = localFont({
-  src: "./fonts/Doto.ttf",
-  variable: "--font-doto",
-  weight: "100 900",
+const logoFont = localFont({
+  src: "./fonts/Silver.ttf",
+  variable: "--font-logo-src",
+  weight: "400",
 });
 
 export const metadata: Metadata = {
@@ -19,7 +19,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ko" className={doto.variable}>
+    <html lang="ko" className={logoFont.variable}>
       <body className="min-h-screen">{children}</body>
     </html>
   );

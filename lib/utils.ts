@@ -79,3 +79,23 @@ export function computeStats(reviews: Review[]): DashboardStats {
 export function cn(...classes: (string | undefined | false | null)[]): string {
   return classes.filter(Boolean).join(" ");
 }
+
+/**
+ * 스토어 제목에서 부제를 떼어내 앱 이름만 남긴다. (스토어는 이름 필드를 따로 주지 않아 규칙으로 처리)
+ *  - "당근 - 당신 근처의 지역 생활 커뮤니티" → "당근"
+ *  - "쿠팡(Coupang)-모바일 쇼핑"            → "쿠팡"
+ *  - "카카오톡 KakaoTalk"                   → "카카오톡"  (한글 이름 뒤에 붙은 영문 병기)
+ * 규칙에 걸리지 않거나 결과가 비면 원래 제목을 그대로 쓴다.
+ */
+export function shortAppName(title: string): string {
+  let name = title.trim();
+  // 1) 구분자 뒤 부제: " - ", " – ", " — ", " | ", " : ", "이름: 부제", 또는 닫는 괄호 바로 뒤의 "-"
+  name = name.split(/\s+[-–—|:]\s+|:\s+|(?<=\))\s*[-–—]\s*/)[0];
+  // 2) 끝의 괄호 병기: "쿠팡(Coupang)"
+  name = name.replace(/\s*[(（][^)）]*[)）]\s*$/, "");
+  // 3) 한글 이름 뒤에 붙은 영문 병기. 영문이 4글자 이상일 때만 제거해 "카카오 T", "삼성 Pay"는 보호
+  const m = name.match(/^(.*[가-힣])\s+([A-Za-z][A-Za-z0-9. ]*)$/);
+  if (m && m[2].replace(/\s/g, "").length >= 4) name = m[1];
+  name = name.trim();
+  return name || title.trim();
+}

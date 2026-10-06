@@ -24,21 +24,21 @@ type SummaryState =
 const POINT_STYLES = {
   positive: {
     text: "text-positive",
-    card: "border-positive/20 border-l-positive bg-positive/[0.07]",
-    selected: "border-positive bg-positive/[0.09] outline-2 outline-offset-1 outline-positive",
+    card: "bg-positive/[0.07]",
+    selected: "bg-positive/[0.09] outline-2 outline-offset-1 outline-positive",
     badge: "border-positive/20 bg-positive/10 text-positive",
   },
   negative: {
     text: "text-negative",
-    card: "border-negative/20 border-l-negative bg-negative/[0.07]",
-    selected: "border-negative bg-negative/[0.09] outline-2 outline-offset-1 outline-negative",
+    card: "bg-negative/[0.07]",
+    selected: "bg-negative/[0.09] outline-2 outline-offset-1 outline-negative",
     badge: "border-negative/20 bg-negative/10 text-negative",
   },
   suggestion: {
-    text: "text-accent",
-    card: "border-accent/20 border-l-accent bg-accent/[0.07]",
-    selected: "border-accent bg-accent/[0.09] outline-2 outline-offset-1 outline-accent",
-    badge: "border-accent/20 bg-accent/10 text-accent",
+    text: "text-accent-text",
+    card: "bg-accent/[0.07]",
+    selected: "bg-accent/[0.09] outline-2 outline-offset-1 outline-accent",
+    badge: "border-accent/20 bg-accent/10 text-accent-text",
   },
 };
 
@@ -100,7 +100,7 @@ function ReviewRow({ r, keywords }: { r: Review; keywords: string[] }) {
           <Highlight text={r.text} queries={keywords} />
         </div>
         {needsExpand && (
-          <span className="mt-0.5 block text-xs font-semibold text-accent">{expanded ? "접기" : "더보기"}</span>
+          <span className="mt-0.5 block text-xs font-semibold text-accent-text">{expanded ? "접기" : "더보기"}</span>
         )}
       </td>
       <td className="order-3 ml-auto block text-xs whitespace-nowrap text-fg-muted md:table-cell md:px-4 md:py-3 md:align-top md:text-[13px]">
@@ -125,7 +125,7 @@ function PointCard({
   return (
     <div
       onClick={onClick}
-      className={`basis-full cursor-pointer rounded-[10px] border border-l-[3px] px-4 py-3 transition-colors md:max-w-[360px] md:min-w-[200px] md:flex-1 md:basis-[200px] ${
+      className={`basis-full cursor-pointer rounded-[10px] px-4 py-3 transition-colors md:max-w-[360px] md:min-w-[200px] md:flex-1 md:basis-[200px] ${
         selected ? st.selected : st.card
       }`}
     >
@@ -168,10 +168,12 @@ export default function ReviewTable({
   const keywordInputRef = useRef<HTMLInputElement>(null);
   const [page, setPage] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
-  const isFirstRender = useRef(true);
+  const prevPage = useRef(page);
 
+  // 페이지 번호가 실제로 바뀐 때만 목록 상단으로 스크롤 (마운트·Strict Mode 재실행 시에는 스크롤하지 않음)
   useEffect(() => {
-    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    if (prevPage.current === page) return;
+    prevPage.current = page;
     containerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [page]);
 
@@ -281,20 +283,21 @@ export default function ReviewTable({
   }
 
   const chip = "rounded-full border px-2.5 py-0.5 text-xs font-semibold";
+  // 기본 select는 OS마다 글자 위치·화살표 공간이 달라 글자가 밀려 보이므로, 기본 모양을 끄고(appearance-none) 화살표는 select-chevron으로 직접 그린다
   const select =
-    "min-h-10 flex-1 rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-base text-fg outline-none md:min-h-0 md:flex-none md:text-[13px]";
+    "select-chevron min-h-10 flex-1 appearance-none rounded-lg border border-line bg-surface-2 py-1.5 pr-9 pl-3 text-left text-base text-fg outline-none md:min-h-0 md:flex-none md:text-[13px]";
   const pageBtn = "rounded-lg border px-3 py-1.5 text-[13px]";
 
   return (
-    <div ref={containerRef} className="overflow-hidden rounded-2xl border border-line bg-surface">
+    <div ref={containerRef} className="overflow-hidden rounded-2xl bg-surface">
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-3 md:gap-3 md:px-6 md:py-4">
         <h3 className="mr-2 text-[15px] font-semibold text-fg">리뷰 목록</h3>
         {versionFilter && (
-          <span className={`${chip} border-accent bg-accent-glow text-accent`}>v{versionFilter}</span>
+          <span className={`${chip} border-accent bg-accent-glow text-accent-text`}>v{versionFilter}</span>
         )}
         {monthFilter && (
-          <span className={`${chip} border-accent/25 bg-accent/10 text-accent`}>{monthFilter}</span>
+          <span className={`${chip} border-accent/25 bg-accent/10 text-accent-text`}>{monthFilter}</span>
         )}
         <div
           onClick={() => keywordInputRef.current?.focus()}
@@ -303,7 +306,7 @@ export default function ReviewTable({
           {keywords.map((k) => (
             <span
               key={k}
-              className="inline-flex items-center gap-1 rounded-full border border-accent bg-accent-glow px-2 py-px text-xs font-semibold whitespace-nowrap text-accent"
+              className="inline-flex items-center gap-1 rounded-full border border-accent bg-accent-glow px-2 py-px text-xs font-semibold whitespace-nowrap text-accent-text"
             >
               {k}
               <button
@@ -312,7 +315,7 @@ export default function ReviewTable({
                   setKeywords((prev) => prev.filter((v) => v !== k));
                   setPage(1);
                 }}
-                className="cursor-pointer p-0 text-[13px] leading-none font-bold text-accent"
+                className="cursor-pointer p-0 text-[13px] leading-none font-bold text-accent-text"
               >
                 ×
               </button>
@@ -350,7 +353,7 @@ export default function ReviewTable({
           }}
           className={select}
         >
-          <option value="all">전체 감성</option>
+          <option value="all">전체 감정</option>
           <option value="positive">긍정</option>
           <option value="negative">부정</option>
         </select>
@@ -372,7 +375,7 @@ export default function ReviewTable({
         </select>
         <label
           className={`flex cursor-pointer items-center gap-1.5 text-[13px] whitespace-nowrap select-none ${
-            filterShort ? "font-semibold text-accent" : "font-normal text-fg-muted"
+            filterShort ? "font-semibold text-accent-text" : "font-normal text-fg-muted"
           }`}
         >
           <input
@@ -384,7 +387,7 @@ export default function ReviewTable({
             }}
             className="size-3.5 cursor-pointer accent-accent"
           />
-          무의미한 리뷰 제거
+          짧은 리뷰 제거
           <span className="text-[11px] font-normal text-fg-muted">({MIN_LENGTH}자 이상만)</span>
         </label>
         <div className="flex w-full items-center justify-between gap-2.5 md:ml-auto md:w-auto md:justify-start">

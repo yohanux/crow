@@ -78,7 +78,6 @@ export default function Home() {
   const [status, setStatus] = useState<Status>("idle");
   const [result, setResult] = useState<ScrapeResult | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
-  const [exporting, setExporting] = useState(false);
   const [progressMsg, setProgressMsg] = useState("");
   const [progressCount, setProgressCount] = useState(0);
   const [liveAppInfo, setLiveAppInfo] = useState<AppInfo | null>(null);
@@ -240,33 +239,6 @@ export default function Home() {
     setSearchOpen(false);
   };
 
-  const handleExport = useCallback(async () => {
-    if (!result) return;
-    setExporting(true);
-    try {
-      const res = await fetch("/api/export", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reviews: result.reviews, appInfo: result.appInfo }),
-      });
-      if (!res.ok) throw new Error("Export failed");
-      const blob = await res.blob();
-      const cd = res.headers.get("Content-Disposition") || "";
-      let filename = "stoview_export.xlsx";
-      const match = cd.match(/filename\*=UTF-8''(.+)/);
-      if (match) filename = decodeURIComponent(match[1]);
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = filename;
-      link.click();
-      URL.revokeObjectURL(link.href);
-    } catch {
-      alert("엑셀 내보내기 중 오류가 발생했습니다.");
-    } finally {
-      setExporting(false);
-    }
-  }, [result]);
-
   const handleReset = () => {
     setUrl("");
     setSelectedApp(null);
@@ -281,8 +253,9 @@ export default function Home() {
       <header className="sticky top-0 z-[100] flex h-[60px] items-center gap-4 border-b border-line bg-surface px-4 md:px-8">
         <button onClick={handleReset} className="flex cursor-pointer items-center gap-2.5 p-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/brand/stoview-logo-purple.svg" alt="Stoview" width={28} height={28} />
-          <span className="font-logo text-lg font-bold tracking-tight text-fg">STOVIEW</span>
+          <img src="/brand/stoview-logo-white.svg" alt="Stoview" width={32} height={32} className="opacity-30" />
+          {/* Silver 폰트는 대문자가 줄 중앙보다 위에 놓여(상단 여백 300 / 하단 900, em 1900) 0.16em 내려 보정 */}
+          <span className="font-logo translate-y-[0.16em] text-[32px] font-normal tracking-tight text-fg">STOVIEW</span>
         </button>
       </header>
 
@@ -295,10 +268,26 @@ export default function Home() {
           >
             {status === "idle" && (
               <div className="text-center">
-                <h1 className="mb-3 font-logo text-[clamp(40px,14vw,56px)] leading-[1.15] font-bold tracking-[-1.5px] text-white md:text-[64px]">
-                  STOVIEW
-                </h1>
-                <p className="m-0 text-base text-fg-muted md:text-lg">스토어 리뷰 분석</p>
+                <div className="mb-3 flex flex-col items-center justify-center gap-2 md:gap-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/brand/stoview-logo-purple.svg"
+                    alt=""
+                    className="size-[72px] animate-dot-hop md:size-24"
+                  />
+                  {/* 104×48 SVG 워드마크: 모바일 72px / 데스크톱 96px */}
+                  <h1 className="m-0 leading-none">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/brand/stoview-wordmark.svg"
+                      alt="스토뷰"
+                      width={104}
+                      height={48}
+                      className="h-[72px] w-auto md:h-24"
+                    />
+                  </h1>
+                </div>
+                <p className="m-0 text-lg text-fg-muted">스토어 리뷰 분석</p>
               </div>
             )}
 
@@ -314,7 +303,7 @@ export default function Home() {
                     setSearchOpen(true);
                   }}
                   onFocus={() => setSearchOpen(true)}
-                  placeholder="앱 이름 검색 또는 주소 붙여넣기"
+                  placeholder="앱 이름, 주소를 입력해주세요"
                   required
                   disabled={status === "loading"}
                   // iOS는 16px 미만 입력창에 포커스하면 화면을 확대하므로 모바일은 text-base
@@ -325,7 +314,7 @@ export default function Home() {
                   disabled={status === "loading" || !url.trim() || isSearchQuery}
                   className="shrink-0 cursor-pointer rounded-xl bg-accent px-[18px] py-3.5 text-sm font-bold whitespace-nowrap text-white disabled:cursor-not-allowed disabled:opacity-60 md:px-7"
                 >
-                  {status === "loading" ? "수집 중..." : "분석 시작"}
+                  {status === "loading" ? "수집 중..." : "분석하기"}
                 </button>
 
                 {searchOpen && isSearchQuery && status !== "loading" && (
@@ -376,7 +365,7 @@ export default function Home() {
               </div>
 
               {/* Year range slider */}
-              <div className="rounded-xl border border-line bg-surface px-5 pt-4 pb-5">
+              <div className="rounded-xl bg-surface px-5 pt-4 pb-5">
                 <YearRangeSlider
                   min={MIN_YEAR}
                   max={MAX_YEAR}
@@ -402,24 +391,23 @@ export default function Home() {
             {status === "loading" && (
               <div className="w-full max-w-[680px]">
                 {liveAppInfo && (
-                  <div className="mb-3 flex items-center gap-3.5 rounded-xl border border-line bg-surface px-[18px] py-3.5">
+                  <div className="mb-3 flex items-center gap-3.5 rounded-xl bg-surface px-[18px] py-3.5">
                     {liveAppInfo.icon && (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={liveAppInfo.icon} alt="icon" className="size-11 rounded-[10px]" />
                     )}
                     <div className="min-w-0">
                       <div className="text-sm font-semibold text-fg">{liveAppInfo.title}</div>
-                      <div className="text-xs text-fg-muted">{liveAppInfo.developer}</div>
                     </div>
                     {!isAllYears && (
-                      <div className="ml-auto shrink-0 rounded-md bg-accent-glow px-2.5 py-[3px] text-xs font-bold text-accent">
+                      <div className="ml-auto shrink-0 rounded-md bg-accent-glow px-2.5 py-[3px] text-xs font-bold text-accent-text">
                         {yearRange[0]} ~ {yearRange[1]}
                       </div>
                     )}
                   </div>
                 )}
 
-                <div className="flex flex-col items-center gap-3.5 rounded-xl border border-line bg-surface px-6 py-5">
+                <div className="flex flex-col items-center gap-3.5 rounded-xl bg-surface px-6 py-5">
                   <div className="flex w-full items-center gap-3">
                     <div className="relative size-7 shrink-0">
                       <div className="absolute inset-0 rounded-full border-[2.5px] border-line" />
@@ -427,7 +415,7 @@ export default function Home() {
                     </div>
                     <div className="flex-1 text-[13px] font-medium text-fg">{progressMsg}</div>
                     {progressCount > 0 && (
-                      <div className="shrink-0 text-[22px] font-bold text-accent tabular-nums">
+                      <div className="shrink-0 text-[22px] font-bold text-accent-text tabular-nums">
                         {progressCount.toLocaleString()}개
                       </div>
                     )}
@@ -461,8 +449,6 @@ export default function Home() {
             <Dashboard
               reviews={result.reviews}
               appInfo={result.appInfo}
-              onExport={handleExport}
-              exporting={exporting}
             />
           </div>
         )}

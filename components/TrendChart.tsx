@@ -23,9 +23,9 @@ interface TrendChartProps {
 }
 
 const SERIES = [
-  { key: "positive", label: "긍정", color: "#22c55e" },
-  { key: "negative", label: "부정", color: "#ef4444" },
-  { key: "avgRating", label: "평균평점", color: "#7c6aff" },
+  { key: "positive", label: "긍정", color: "#22c55e", textColor: "#22c55e" },
+  { key: "negative", label: "부정", color: "#ef4444", textColor: "#ef4444" },
+  { key: "avgRating", label: "평균평점", color: "#7D3CFE", textColor: "#AE8BFF" },
 ] as const;
 
 type SeriesKey = (typeof SERIES)[number]["key"];
@@ -56,7 +56,7 @@ export default function TrendChart({ data, selectedMonth, onMonthClick, bare }: 
     <div className="px-2 pt-4 pb-3 md:px-6 md:py-5">
       {selectedMonth && (
         <div className="mb-3 flex flex-wrap items-center gap-2">
-          <span className="rounded-full border border-accent bg-accent-glow px-2.5 py-0.5 text-xs font-semibold text-accent">
+          <span className="rounded-full border border-accent bg-accent-glow px-2.5 py-0.5 text-xs font-semibold text-accent-text">
             {selectedMonth}
           </span>
           <button
@@ -67,9 +67,10 @@ export default function TrendChart({ data, selectedMonth, onMonthClick, bare }: 
           </button>
         </div>
       )}
-      <div className="h-[220px] md:h-[280px]">
+      <div className="h-[220px] select-none md:h-[280px] [&_*]:outline-none">
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart
+          accessibilityLayer={false}
           data={data}
           margin={{ top: 4, right: 16, left: 0, bottom: 0 }}
           onClick={handleChartClick}
@@ -118,15 +119,15 @@ export default function TrendChart({ data, selectedMonth, onMonthClick, bare }: 
               yAxisId="count"
               x1={selectedMonth}
               x2={selectedMonth}
-              fill="#7c6aff"
+              fill="#7D3CFE"
               fillOpacity={0.08}
-              stroke="#7c6aff"
+              stroke="#7D3CFE"
               strokeOpacity={0.25}
               strokeWidth={1}
             />
           )}
           {visible.positive && (
-            <Bar yAxisId="count" dataKey="positive" name="긍정" stackId="a" radius={[0, 0, 0, 0]}>
+            <Bar yAxisId="count" dataKey="positive" name="긍정" fill="#22c55e" stackId="a" radius={[0, 0, 0, 0]}>
               {data.map((entry) => (
                 <Cell
                   key={entry.month}
@@ -136,7 +137,7 @@ export default function TrendChart({ data, selectedMonth, onMonthClick, bare }: 
             </Bar>
           )}
           {visible.negative && (
-            <Bar yAxisId="count" dataKey="negative" name="부정" stackId="a" radius={[4, 4, 0, 0]}>
+            <Bar yAxisId="count" dataKey="negative" name="부정" fill="#ef4444" stackId="a" radius={[4, 4, 0, 0]}>
               {data.map((entry) => (
                 <Cell
                   key={entry.month}
@@ -151,28 +152,29 @@ export default function TrendChart({ data, selectedMonth, onMonthClick, bare }: 
               type="monotone"
               dataKey="avgRating"
               name="평균평점"
-              stroke="#7c6aff"
+              stroke="#7D3CFE"
               strokeWidth={2}
-              dot={{ fill: "#7c6aff", r: 3 }}
+              dot={false}
+              activeDot={false}
             />
           )}
         </ComposedChart>
       </ResponsiveContainer>
       </div>
-      <div className="mt-3 flex flex-wrap justify-center gap-5">
-        {SERIES.map(({ key, label, color }) => (
+      <div className="mt-3 flex flex-wrap justify-center gap-2 md:gap-3">
+        {SERIES.map(({ key, label, color, textColor }) => (
           <label
             key={key}
-            className={`flex cursor-pointer items-center gap-[5px] text-xs transition-colors select-none ${
+            className={`flex min-h-10 cursor-pointer items-center gap-2 rounded-lg px-3 text-sm transition-colors select-none ${
               visible[key] ? "font-semibold" : "font-normal text-fg-muted"
             }`}
-            style={visible[key] ? { color } : undefined}
+            style={visible[key] ? { color: textColor } : undefined}
           >
             <input
               type="checkbox"
               checked={visible[key]}
               onChange={() => toggleSeries(key)}
-              className="size-[13px] cursor-pointer"
+              className="size-[18px] cursor-pointer"
               style={{ accentColor: color }}
             />
             {label}
@@ -185,7 +187,7 @@ export default function TrendChart({ data, selectedMonth, onMonthClick, bare }: 
   if (bare) return content;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-line bg-surface">
+    <div className="overflow-hidden rounded-2xl bg-surface">
       <div className="border-b border-line px-4 py-3 md:px-6 md:py-4">
         <h3 className="text-[15px] font-semibold text-fg">월별 리뷰 추세</h3>
       </div>

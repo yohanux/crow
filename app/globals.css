@@ -7,8 +7,9 @@
   --border: #2e2e3f;
   --text-primary: #f0f0f8;
   --text-secondary: #9999bb;
-  --accent: #7c6aff;
-  --accent-glow: rgba(124, 106, 255, 0.15);
+  --accent: #7D3CFE; /* 브랜드 기본색(버튼·선·배경) */
+  --accent-text: #AE8BFF; /* 어두운 배경 위 글자용 연한 보라 (대비 약 6.5:1) */
+  --accent-glow: rgba(125, 60, 254, 0.15);
   --positive: #22c55e;
   --negative: #ef4444;
   --neutral: #f59e0b;
@@ -23,6 +24,7 @@
   --color-fg: var(--text-primary);
   --color-fg-muted: var(--text-secondary);
   --color-accent: var(--accent);
+  --color-accent-text: var(--accent-text);
   --color-accent-glow: var(--accent-glow);
   --color-positive: var(--positive);
   --color-negative: var(--negative);
@@ -31,14 +33,28 @@
   --color-appstore: #007aff;
   --color-googleplay: #01875f;
 
-  --font-logo: var(--font-doto);
+  --font-logo: var(--font-logo-src);
 
   --animate-indeterminate: indeterminate 1.6s ease-in-out infinite;
+  /* 도트처럼 끊어서 움직이는 모션: 부드러운 보간 없이 0 ↔ -4px를 즉시 전환 */
+  --animate-dot-hop: dot-hop 0.8s steps(1, end) infinite;
+  @keyframes dot-hop {
+    0%, 49.99% { transform: translateY(0); }
+    50%, 100% { transform: translateY(-4px); }
+  }
   @keyframes indeterminate {
     0% { width: 0%; margin-left: 0%; }
     50% { width: 60%; margin-left: 20%; }
     100% { width: 0%; margin-left: 100%; }
   }
+}
+
+/* select 화살표 (기본 모양을 끈 select 오른쪽에 표시) */
+@utility select-chevron {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239999bb' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px;
 }
 
 html {

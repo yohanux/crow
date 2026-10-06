@@ -61,7 +61,7 @@ export default function VersionBreakdown({ reviews, selectedVersion, onSelect, b
       {/* Header */}
       <div className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-3 md:px-6 md:py-4">
         {selectedVersion && (
-          <span className="rounded-full border border-accent bg-accent-glow px-2.5 py-0.5 text-xs font-semibold text-accent">
+          <span className="rounded-full border border-accent bg-accent-glow px-2.5 py-0.5 text-xs font-semibold text-accent-text">
             v{selectedVersion}
           </span>
         )}
@@ -103,7 +103,7 @@ export default function VersionBreakdown({ reviews, selectedVersion, onSelect, b
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2 md:flex-nowrap">
                 <span
                   className={`min-w-0 flex-1 text-[13px] tabular-nums md:w-24 md:flex-none ${
-                    isSelected ? "font-bold text-accent" : "font-medium text-fg"
+                    isSelected ? "font-bold text-accent-text" : "font-medium text-fg"
                   }`}
                 >
                   v{v.version}
@@ -135,7 +135,7 @@ export default function VersionBreakdown({ reviews, selectedVersion, onSelect, b
   if (bare) return inner;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-line bg-surface">
+    <div className="overflow-hidden rounded-2xl bg-surface">
       <div className="border-b border-line px-4 py-3 md:px-6">
         <h3 className="text-[15px] font-semibold text-fg">버전별 리뷰</h3>
       </div>

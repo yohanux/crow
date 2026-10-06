@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
-import { classifyStore, extractAppStoreId, extractGooglePlayId, getSentiment } from "@/lib/utils";
+import { classifyStore, extractAppStoreId, extractGooglePlayId, getSentiment, shortAppName } from "@/lib/utils";
 import { Review, AppInfo } from "@/lib/types";
+import { APP_STORE_ENABLED } from "@/lib/features";
 
 export const maxDuration = 300;
 
@@ -32,9 +33,6 @@ async function scrapeAppStore(
   let appInfo: AppInfo = {
     title: "알 수 없는 앱",
     icon: "",
-    developer: "",
-    score: 0,
-    ratings: 0,
     storeType: "appstore",
     storeUrl,
   };
@@ -42,11 +40,8 @@ async function scrapeAppStore(
   try {
     const appData = await store.app({ id: appId, country: "kr", lang: "ko" });
     appInfo = {
-      title: appData.title || "알 수 없는 앱",
+      title: shortAppName(appData.title || "알 수 없는 앱"),
       icon: appData.icon || "",
-      developer: appData.developer || "",
-      score: appData.score || 0,
-      ratings: appData.ratings || 0,
       storeType: "appstore",
       storeUrl,
     };
@@ -118,9 +113,6 @@ async function scrapeGooglePlay(
   let appInfo: AppInfo = {
     title: "알 수 없는 앱",
     icon: "",
-    developer: "",
-    score: 0,
-    ratings: 0,
     storeType: "googleplay",
     storeUrl,
   };
@@ -128,11 +120,8 @@ async function scrapeGooglePlay(
   try {
     const appData = await gplay.app({ appId, lang: "ko", country: "kr" });
     appInfo = {
-      title: appData.title || "알 수 없는 앱",
+      title: shortAppName(appData.title || "알 수 없는 앱"),
       icon: appData.icon || "",
-      developer: appData.developer || "",
-      score: appData.score || 0,
-      ratings: appData.ratings || 0,
       storeType: "googleplay",
       storeUrl,
     };
@@ -206,6 +195,12 @@ export async function POST(req: NextRequest) {
   const storeType = classifyStore(url);
   if (!storeType) {
     return new Response(JSON.stringify({ error: "앱스토어 또는 구글플레이 URL을 입력해주세요." }), { status: 400 });
+  }
+
+  if (storeType === "appstore" && !APP_STORE_ENABLED) {
+    return new Response(JSON.stringify({ error: "앱스토어 분석은 현재 지원하지 않습니다. 구글플레이 앱을 입력해주세요." }), {
+      status: 400,
+    });
   }
 
   const currentYear = new Date().getFullYear();

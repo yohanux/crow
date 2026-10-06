@@ -73,7 +73,7 @@ export default function YearRangeSlider({ min, max, value, onChange, disabled }:
         <span className="text-[13px] font-medium text-fg-muted">수집 기간</span>
         <span
           className={`rounded-md text-[13px] font-bold transition-all duration-200 ${
-            isAll ? "p-0 text-fg-muted" : "bg-accent-glow px-2.5 py-0.5 text-accent"
+            isAll ? "p-0 text-fg-muted" : "bg-accent-glow px-2.5 py-0.5 text-accent-text"
           }`}
         >
           {isAll ? "전체 기간" : `${startYear} ~ ${max}`}
@@ -118,7 +118,7 @@ export default function YearRangeSlider({ min, max, value, onChange, disabled }:
               className={`min-w-0 flex-1 text-center text-[11px] whitespace-nowrap transition-colors duration-150 select-none ${
                 i % 2 === 1 ? "invisible md:visible" : ""
               } ${disabled ? "cursor-not-allowed" : "cursor-pointer"} ${
-                y >= startYear ? "font-semibold text-accent" : "font-normal text-line"
+                y >= startYear ? "font-semibold text-accent-text" : "font-normal text-line"
               }`}
             >
               {y}

@@ -15,9 +15,6 @@ export interface Review {
 export interface AppInfo {
   title: string;
   icon: string;
-  developer: string;
-  score: number;
-  ratings: number;
   storeType: StoreType;
   storeUrl: string;
 }

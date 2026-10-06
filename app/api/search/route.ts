@@ -1,5 +1,7 @@
 import { NextRequest } from "next/server";
 import { SearchResult } from "@/lib/types";
+import { APP_STORE_ENABLED } from "@/lib/features";
+import { shortAppName } from "@/lib/utils";
 
 const LIMIT = 5;
 
@@ -10,7 +12,7 @@ async function searchAppStore(term: string): Promise<SearchResult[]> {
   return list
     .filter((a: { id?: unknown }) => a.id)
     .map((a: Record<string, unknown>) => ({
-      title: String(a.title || ""),
+      title: shortAppName(String(a.title || "")),
       icon: String(a.icon || ""),
       developer: String(a.developer || ""),
       score: Number(a.score) || 0,
@@ -37,7 +39,7 @@ async function searchGooglePlay(term: string): Promise<SearchResult[]> {
     const a = r.value;
     return [
       {
-        title: String(a.title || ""),
+        title: shortAppName(String(a.title || "")),
         icon: String(a.icon || ""),
         developer: String(a.developer || ""),
         score: Number(a.score) || 0,
@@ -52,7 +54,10 @@ export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q")?.trim();
   if (!q) return Response.json({ appstore: [], googleplay: [] });
 
-  const [appstore, googleplay] = await Promise.allSettled([searchAppStore(q), searchGooglePlay(q)]);
+  const [appstore, googleplay] = await Promise.allSettled([
+    APP_STORE_ENABLED ? searchAppStore(q) : Promise.resolve([] as SearchResult[]),
+    searchGooglePlay(q),
+  ]);
 
   return Response.json({
     appstore: appstore.status === "fulfilled" ? appstore.value.slice(0, LIMIT) : [],
