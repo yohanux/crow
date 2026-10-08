@@ -100,9 +100,9 @@ export function shortAppName(title: string): string {
   return name || title.trim();
 }
 
-/** 연도 범위 표기: 같은 해면 "2026년", 다르면 "2025-2026년" */
+/** 연도 범위 표기: 같은 해면 "2026년", 다르면 "2025년 - 2026년" */
 export function formatYearRange(start: number, end: number): string {
-  return start === end ? `${start}년` : `${start}-${end}년`;
+  return start === end ? `${start}년` : `${start}년 - ${end}년`;
 }
 
 /** 스토어의 최초 등록일 문자열("2010. 8. 23." / "Nov 12, 2013" 등)에서 연도만 뽑는다. 못 찾으면 null */
