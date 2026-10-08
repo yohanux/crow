@@ -54,12 +54,39 @@
   }
 }
 
+/* 스크롤은 되지만 스크롤바는 보이지 않게 (칩 줄처럼 가로 스크롤되는 좁은 영역용) */
+@utility scrollbar-hidden {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* 구형 Edge */
+  &::-webkit-scrollbar {
+    display: none; /* Chrome · Safari */
+  }
+}
+
 /* select 화살표 (기본 모양을 끈 select 오른쪽에 표시) */
 @utility select-chevron {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239999bb' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 10px center;
   background-size: 16px;
+}
+
+/* 체크박스: 브라우저 기본 체크 표시는 배경이 밝은 색(초록 등)이면 검정으로 바뀌므로,
+   --check-color로 배경색을 받고 체크 표시는 항상 흰색으로 그린다 */
+@utility check-white {
+  appearance: none;
+  flex-shrink: 0;
+  border-radius: 5px;
+  border: 1.5px solid var(--check-color, var(--accent));
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 14px;
+  transition: background-color 0.15s;
+  &:checked {
+    background-color: var(--check-color, var(--accent));
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5l3 3 6-7'/%3E%3C/svg%3E");
+  }
 }
 
 html {

@@ -23,7 +23,7 @@ export default function Dashboard({ reviews, appInfo }: DashboardProps) {
     return formatYearRange(min, max);
   }, [reviews]);
   const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
-  const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
+  const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<"trend" | "version">("trend");
 
   return (
@@ -88,7 +88,7 @@ export default function Dashboard({ reviews, appInfo }: DashboardProps) {
 
         {/* Content — both mounted to preserve state */}
         <div className={activeTab === "trend" ? "block" : "hidden"}>
-          <TrendChart bare data={stats.trend} selectedMonth={selectedMonth} onMonthClick={setSelectedMonth} />
+          <TrendChart bare data={stats.trend} selectedMonths={selectedMonths} onMonthsChange={setSelectedMonths} />
         </div>
         <div className={activeTab === "version" ? "block" : "hidden"}>
           <VersionBreakdown
@@ -101,7 +101,7 @@ export default function Dashboard({ reviews, appInfo }: DashboardProps) {
       </div>
 
       {/* Review table */}
-      <ReviewTable reviews={reviews} versionFilter={selectedVersion} monthFilter={selectedMonth} />
+      <ReviewTable reviews={reviews} versionFilter={selectedVersion} monthFilters={selectedMonths} />
     </div>
   );
 }

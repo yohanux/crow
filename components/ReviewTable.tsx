@@ -150,11 +150,12 @@ function PointCard({
 export default function ReviewTable({
   reviews,
   versionFilter,
-  monthFilter,
+  monthFilters,
 }: {
   reviews: Review[];
   versionFilter?: string | null;
-  monthFilter?: string | null;
+  /** 선택한 월들. 하나라도 일치하면 보여준다 (비어 있으면 전체) */
+  monthFilters?: string[];
 }) {
   const [sortKey, setSortKey] = useState<SortKey | null>("date");
   const [sortAsc, setSortAsc] = useState(false);
@@ -179,13 +180,13 @@ export default function ReviewTable({
 
   useEffect(() => {
     setPage(1);
-  }, [versionFilter, monthFilter]);
+  }, [versionFilter, monthFilters]);
 
   // Reset summary and selection when filters change
   useEffect(() => {
     setSummary({ status: "idle" });
     setSelectedPoint(null);
-  }, [versionFilter, monthFilter, sentiment, ratingFilter, keywords, filterShort]);
+  }, [versionFilter, monthFilters, sentiment, ratingFilter, keywords, filterShort]);
 
   // Reset selection when summary changes
   useEffect(() => {
@@ -197,7 +198,9 @@ export default function ReviewTable({
   const filtered = useMemo(() => {
     let res = reviews;
     if (versionFilter) res = res.filter((r) => (r.version || "알 수 없음") === versionFilter);
-    if (monthFilter) res = res.filter((r) => format(new Date(r.date), "yyyy-MM") === monthFilter);
+    if (monthFilters && monthFilters.length > 0) {
+      res = res.filter((r) => monthFilters.includes(format(new Date(r.date), "yyyy-MM")));
+    }
     if (filterShort) res = res.filter((r) => r.text.trim().length >= MIN_LENGTH);
     if (sentiment !== "all") res = res.filter((r) => r.sentiment === sentiment);
     if (ratingFilter !== "all") res = res.filter((r) => r.rating === ratingFilter);
@@ -214,7 +217,7 @@ export default function ReviewTable({
       );
     }
     return res;
-  }, [reviews, versionFilter, monthFilter, sentiment, ratingFilter, keywords, filterShort]);
+  }, [reviews, versionFilter, monthFilters, sentiment, ratingFilter, keywords, filterShort]);
 
   const sorted = useMemo(() => {
     if (!sortKey) return [...filtered];
@@ -282,7 +285,6 @@ export default function ReviewTable({
     }
   }
 
-  const chip = "rounded-full border px-2.5 py-0.5 text-xs font-semibold";
   // 기본 select는 OS마다 글자 위치·화살표 공간이 달라 글자가 밀려 보이므로, 기본 모양을 끄고(appearance-none) 화살표는 select-chevron으로 직접 그린다
   const select =
     "select-chevron min-h-10 flex-1 appearance-none rounded-lg border border-line bg-surface-2 py-1.5 pr-9 pl-3 text-left text-base text-fg outline-none md:min-h-0 md:flex-none md:text-[13px]";
@@ -293,12 +295,6 @@ export default function ReviewTable({
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-3 md:gap-3 md:px-6 md:py-4">
         <h3 className="mr-2 text-[15px] font-semibold text-fg">리뷰 목록</h3>
-        {versionFilter && (
-          <span className={`${chip} border-accent bg-accent-glow text-accent-text`}>v{versionFilter}</span>
-        )}
-        {monthFilter && (
-          <span className={`${chip} border-accent/25 bg-accent/10 text-accent-text`}>{monthFilter}</span>
-        )}
         <div
           onClick={() => keywordInputRef.current?.focus()}
           className="flex min-w-[180px] basis-full cursor-text flex-wrap items-center gap-1 rounded-lg border border-line bg-surface-2 px-2 py-1 md:max-w-[360px] md:basis-auto"

@@ -47,9 +47,7 @@ export default function RatingBar({ data, total, avgRating }: RatingBarProps) {
             >
               <div className="relative h-6 overflow-hidden rounded bg-surface-2">
                 <div
-                  className={`flex h-full items-center justify-end rounded pr-2 transition-[width] duration-[600ms] ease-out ${
-                    d.star >= 4 ? "bg-positive" : "bg-negative"
-                  }`}
+                  className="flex h-full items-center justify-end rounded bg-accent pr-2 transition-[width] duration-[600ms] ease-out"
                   style={{ width: `${d.percent}%` }}
                 >
                   {/* 막대가 충분히 길 때만 안쪽에 개수 표시 */}
