@@ -99,3 +99,23 @@ export function shortAppName(title: string): string {
   name = name.trim();
   return name || title.trim();
 }
+
+/** 연도 범위 표기: 같은 해면 "2026년", 다르면 "2025-2026년" */
+export function formatYearRange(start: number, end: number): string {
+  return start === end ? `${start}년` : `${start}-${end}년`;
+}
+
+/** 스토어의 최초 등록일 문자열("2010. 8. 23." / "Nov 12, 2013" 등)에서 연도만 뽑는다. 못 찾으면 null */
+export function parseReleasedYear(released: unknown): number | null {
+  const m = String(released ?? "").match(/(?:19|20)\d{2}/);
+  return m ? Number(m[0]) : null;
+}
+
+/**
+ * 구글플레이 아이콘은 크기를 지정하지 않으면 512px 원본(수십 KB)이 내려온다.
+ * 화면에는 작게 보이므로 "=s{size}"를 붙여 필요한 크기만 받는다. (다른 호스트 주소는 그대로 둔다)
+ */
+export function sizedIcon(url: string, size: number): string {
+  if (!url.includes("googleusercontent.com")) return url;
+  return `${url.replace(/=[^/=]*$/, "")}=s${size}`;
+}

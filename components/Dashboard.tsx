@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Review, AppInfo } from "@/lib/types";
-import { computeStats } from "@/lib/utils";
+import { computeStats, formatYearRange } from "@/lib/utils";
 import RatingBar from "./RatingBar";
 import TrendChart from "./TrendChart";
 import ReviewTable from "./ReviewTable";
@@ -20,7 +20,7 @@ export default function Dashboard({ reviews, appInfo }: DashboardProps) {
     const years = reviews.map((r) => new Date(r.date).getFullYear());
     const min = Math.min(...years);
     const max = Math.max(...years);
-    return min === max ? `${min}` : `${min}-${max}`;
+    return formatYearRange(min, max);
   }, [reviews]);
   const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
@@ -56,7 +56,7 @@ export default function Dashboard({ reviews, appInfo }: DashboardProps) {
           {/* Hero title — Silver는 글자 아래쪽 빈 공간(약 0.4em)이 커서 음수 마진으로 하단 여백을 줄인다 */}
           {reviewYearRange && (
             <h2 className="mt-0 -mb-[0.3em] w-full text-center font-logo text-[clamp(32px,11vw,48px)] leading-none font-normal text-fg md:mt-2 md:basis-full md:text-left md:text-5xl">
-              <span className="text-accent">{reviewYearRange}년</span> 리뷰 분석
+              <span className="text-accent">{reviewYearRange}</span> 리뷰 분석
             </h2>
           )}
         </div>

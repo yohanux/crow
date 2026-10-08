@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { classifyStore, extractAppStoreId, extractGooglePlayId, getSentiment, shortAppName } from "@/lib/utils";
+import { classifyStore, extractAppStoreId, extractGooglePlayId, getSentiment, shortAppName, sizedIcon } from "@/lib/utils";
 import { Review, AppInfo } from "@/lib/types";
 import { APP_STORE_ENABLED } from "@/lib/features";
 
@@ -41,7 +41,7 @@ async function scrapeAppStore(
     const appData = await store.app({ id: appId, country: "kr", lang: "ko" });
     appInfo = {
       title: shortAppName(appData.title || "알 수 없는 앱"),
-      icon: appData.icon || "",
+      icon: sizedIcon(appData.icon || "", 128),
       storeType: "appstore",
       storeUrl,
     };
@@ -121,7 +121,7 @@ async function scrapeGooglePlay(
     const appData = await gplay.app({ appId, lang: "ko", country: "kr" });
     appInfo = {
       title: shortAppName(appData.title || "알 수 없는 앱"),
-      icon: appData.icon || "",
+      icon: sizedIcon(appData.icon || "", 128),
       storeType: "googleplay",
       storeUrl,
     };

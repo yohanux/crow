@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { SearchResult } from "@/lib/types";
 import { APP_STORE_ENABLED } from "@/lib/features";
-import { shortAppName } from "@/lib/utils";
+import { parseReleasedYear, shortAppName, sizedIcon } from "@/lib/utils";
 
 const LIMIT = 5;
 
@@ -40,7 +40,8 @@ async function searchGooglePlay(term: string): Promise<SearchResult[]> {
     return [
       {
         title: shortAppName(String(a.title || "")),
-        icon: String(a.icon || ""),
+        releasedYear: parseReleasedYear(a.released) ?? undefined,
+        icon: sizedIcon(String(a.icon || ""), 96),
         developer: String(a.developer || ""),
         score: Number(a.score) || 0,
         storeType: "googleplay" as const,

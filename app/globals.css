@@ -36,6 +36,11 @@
   --font-logo: var(--font-logo-src);
 
   --animate-indeterminate: indeterminate 1.6s ease-in-out infinite;
+  --animate-fade-in: fade-in 300ms ease-out both;
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
   /* 도트처럼 끊어서 움직이는 모션: 부드러운 보간 없이 0 ↔ -4px를 즉시 전환 */
   --animate-dot-hop: dot-hop 0.8s steps(1, end) infinite;
   @keyframes dot-hop {

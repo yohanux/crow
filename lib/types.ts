@@ -52,6 +52,8 @@ export interface DashboardStats {
 
 export interface SearchResult {
   title: string;
+  /** 스토어 최초 등록 연도 (수집 기간 슬라이더의 시작 연도로 쓴다) */
+  releasedYear?: number;
   icon: string;
   developer: string;
   score: number;
