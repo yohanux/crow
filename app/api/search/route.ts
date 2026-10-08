@@ -41,6 +41,7 @@ async function searchGooglePlay(term: string): Promise<SearchResult[]> {
       {
         title: shortAppName(String(a.title || "")),
         releasedYear: parseReleasedYear(a.released) ?? undefined,
+        reviewCount: Number(a.reviews) || undefined,
         icon: sizedIcon(String(a.icon || ""), 96),
         developer: String(a.developer || ""),
         score: Number(a.score) || 0,

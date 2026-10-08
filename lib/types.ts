@@ -54,6 +54,8 @@ export interface SearchResult {
   title: string;
   /** 스토어 최초 등록 연도 (수집 기간 슬라이더의 시작 연도로 쓴다) */
   releasedYear?: number;
+  /** 스토어에 작성된 리뷰 수 (많은 서비스에는 기간을 좁히도록 안내한다) */
+  reviewCount?: number;
   icon: string;
   developer: string;
   score: number;

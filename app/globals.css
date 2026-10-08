@@ -89,6 +89,12 @@
   }
 }
 
+/* 검색·수집 화면은 내용이 화면 안에 다 들어오므로, 화면 끝에서 당겼을 때 늘어나는 바운스(고무줄) 스크롤을 막는다 */
+html.no-overscroll,
+html.no-overscroll body {
+  overscroll-behavior: none;
+}
+
 html {
   -webkit-text-size-adjust: 100%;
 }

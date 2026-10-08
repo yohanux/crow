@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
       icon: sizedIcon(String(app.icon || ""), 96),
       developer: String(app.developer || ""),
       releasedYear: parseReleasedYear(app.released),
+      reviewCount: Number(app.reviews) || null,
     });
   } catch {
     return Response.json({ releasedYear: null });

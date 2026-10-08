@@ -10,6 +10,9 @@ type Status = "idle" | "loading" | "done" | "error";
 
 // 앱의 최초 등록 연도를 모를 때 쓰는 기본 시작 연도
 const DEFAULT_MIN_YEAR = 2010;
+// 리뷰가 이만큼 이상이면 "많은 서비스"로 보고, 기본 수집 기간을 최근 2년으로 좁힌다
+const MANY_REVIEWS = 10000;
+const RECOMMENDED_YEARS_BACK = 2;
 const MAX_YEAR = new Date().getFullYear();
 
 const IDB_NAME = "stoview";
@@ -77,6 +80,8 @@ export default function Home() {
   const [url, setUrl] = useState("");
   // 슬라이더의 시작 연도 = 선택한 앱이 스토어에 처음 등록된 연도
   const [minYear, setMinYear] = useState(DEFAULT_MIN_YEAR);
+  // 리뷰가 많은 서비스인지 (기간 슬라이더 아래 경고 표시 + 기본 기간 2년)
+  const [manyReviews, setManyReviews] = useState(false);
   const [yearRange, setYearRange] = useState<[number, number]>([DEFAULT_MIN_YEAR, MAX_YEAR]);
   // 앱을 고르거나 주소 확인이 끝나기 전에는 기간 슬라이더를 보여주지 않는다
   const [sliderReady, setSliderReady] = useState(false);
@@ -84,6 +89,8 @@ export default function Home() {
   const [appPreview, setAppPreview] = useState<{ title: string; icon: string; developer: string } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [inputFocused, setInputFocused] = useState(false);
+  // 이름 검색 요청이 진행 중인지 (검색 결과 목록의 "검색 중..." 로딩 표시용)
+  const [searching, setSearching] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
   const [result, setResult] = useState<ScrapeResult | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
@@ -148,13 +155,23 @@ export default function Home() {
       fetch(`/api/search?q=${encodeURIComponent(query)}`, { signal: controller.signal })
         .then((r) => r.json())
         .then((data) => setSearchResults(data))
-        .catch(() => {});
+        .catch(() => {})
+        // 새 입력으로 중단된(abort) 요청이 뒤늦게 끝나도, 진행 중인 새 요청의 로딩 표시를 끄지 않는다
+        .finally(() => {
+          if (!controller.signal.aborted) setSearching(false);
+        });
     }, 350);
     return () => {
       clearTimeout(timer);
       controller.abort();
     };
   }, [query, isSearchQuery, status]);
+
+  // 결과 화면(스크롤이 필요한 화면)이 아닐 때는 바운스 스크롤을 끈다
+  useEffect(() => {
+    document.documentElement.classList.toggle("no-overscroll", status !== "done");
+    return () => document.documentElement.classList.remove("no-overscroll");
+  }, [status]);
 
   // 수집 화면을 히스토리에 쌓아 브라우저 뒤로가기로 검색 화면에 돌아올 수 있게 한다
   const pushedRef = useRef(false);
@@ -256,18 +273,22 @@ export default function Home() {
 
   // 목록에서는 선택만 하고, 분석은 시작 버튼으로 실행한다
   // 슬라이더의 시작 연도를 앱의 최초 등록 연도로 맞추고, 선택 범위도 전체 기간으로 되돌린다
-  const applyMinYear = useCallback((year?: number | null) => {
+  // 리뷰가 많은 서비스는 선택 범위를 최근 2년(예: 2024~2026)으로 기본 설정한다. 슬라이더에서는 더 이전 연도도 고를 수 있다.
+  const applyMinYear = useCallback((year?: number | null, reviewCount?: number | null) => {
     const m = Math.min(year ?? DEFAULT_MIN_YEAR, MAX_YEAR);
+    const many = (reviewCount ?? 0) >= MANY_REVIEWS;
     setMinYear(m);
-    setYearRange([m, MAX_YEAR]);
+    setManyReviews(many);
+    setYearRange([many ? Math.max(m, MAX_YEAR - RECOMMENDED_YEARS_BACK) : m, MAX_YEAR]);
   }, []);
 
   const handleSelectApp = (r: SearchResult) => {
     setSelectedApp(r);
     setUrl(r.url);
     setSearchOpen(false);
-    applyMinYear(r.releasedYear);
+    applyMinYear(r.releasedYear, r.reviewCount);
     setSliderReady(true);
+    setSearching(false);
     setAppPreview({ title: r.title, icon: r.icon, developer: r.developer });
   };
 
@@ -276,6 +297,7 @@ export default function Home() {
     setSelectedApp(null);
     setSliderReady(false);
     setAppPreview(null);
+    setSearching(false);
     setUrl("");
     setSearchResults(null);
     setSearchOpen(false);
@@ -294,7 +316,7 @@ export default function Home() {
     fetch(`/api/app-info?url=${encodeURIComponent(u)}`, { signal: controller.signal })
       .then((r) => r.json())
       .then((d) => {
-        applyMinYear(d.releasedYear); // 모르면 기본 시작 연도
+        applyMinYear(d.releasedYear, d.reviewCount); // 모르면 기본 시작 연도
         setSliderReady(true);
         if (d.title) setAppPreview({ title: d.title, icon: d.icon, developer: d.developer });
       })
@@ -314,6 +336,7 @@ export default function Home() {
     setSelectedApp(null);
     setSliderReady(false);
     setAppPreview(null);
+    setSearching(false);
     applyMinYear(null);
     const pushed = pushedRef.current;
     resetView(); // 화면은 즉시 초기화
@@ -408,6 +431,9 @@ export default function Home() {
                         setSelectedApp(null);
                         setSliderReady(false);
                         setAppPreview(null);
+                        // 이름 검색어(2자 이상, 주소 아님)면 "검색 중" 표시를 즉시 켠다
+                        const typed = e.target.value.trim();
+                        setSearching(typed.length >= 2 && !classifyStore(typed) && !/^https?:\/\//i.test(typed));
                         setUrl(e.target.value);
                         setSearchOpen(true);
                       }}
@@ -443,7 +469,12 @@ export default function Home() {
                     <>
                       <div onClick={() => setSearchOpen(false)} className="fixed inset-0 z-40" />
                       <div className="absolute inset-x-0 top-[calc(100%+8px)] z-50 overflow-y-auto rounded-xl border border-line bg-surface p-2 shadow-[0_12px_32px_rgba(0,0,0,0.35)]" style={{ maxHeight: dropdownMaxH ?? undefined }}>
-                        {!searchResults && <div className="p-4 text-[13px] text-fg-muted">검색 중...</div>}
+                        {(searching || !searchResults) && (
+                          <div className="flex items-center gap-2.5 p-3 text-[13px] text-fg-muted">
+                            <span className="size-3.5 shrink-0 animate-spin rounded-full border-2 border-fg-muted/30 border-t-fg-muted" />
+                            검색 중...
+                          </div>
+                        )}
                         {searchResults &&
                           (["appstore", "googleplay"] as const).map((type) => {
                             const list = searchResults[type];
@@ -525,6 +556,16 @@ export default function Home() {
                       onChange={setYearRange}
                       disabled={status === "loading"}
                     />
+                    {manyReviews && (
+                      <p className="mt-5 flex items-start justify-center gap-2 text-center text-[13px] leading-snug text-negative">
+                        <svg className="mt-px shrink-0" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                          <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
+                          <path d="M8 4.5v4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                          <circle cx="8" cy="11.2" r="0.9" fill="currentColor" />
+                        </svg>
+                        <span>이 서비스는 리뷰 수가 많아요. {RECOMMENDED_YEARS_BACK}년 전까지만 선택하는 것을 권장해요.</span>
+                      </p>
+                    )}
                   </div>
                   {/* 모바일: 화면 하단에 고정된 바텀 CTA(홈 인디케이터 영역 포함) / md 이상: 폼 흐름 안의 가운데 버튼 */}
                   <div className="animate-fade-in fixed inset-x-0 bottom-0 z-[60] border-t border-line bg-background/90 px-4 pt-3 pb-[max(16px,env(safe-area-inset-bottom))] backdrop-blur md:static md:z-auto md:flex md:justify-center md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none">
