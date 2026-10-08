@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { ScrapeResult, AppInfo, SearchResult } from "@/lib/types";
-import { classifyStore, formatYearRange } from "@/lib/utils";
+import { ScrapeResult, SearchResult } from "@/lib/types";
+import { classifyStore } from "@/lib/utils";
 import Dashboard from "@/components/Dashboard";
 import YearRangeSlider from "@/components/YearRangeSlider";
 
@@ -87,9 +87,7 @@ export default function Home() {
   const [status, setStatus] = useState<Status>("idle");
   const [result, setResult] = useState<ScrapeResult | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
-  const [progressMsg, setProgressMsg] = useState("");
   const [progressCount, setProgressCount] = useState(0);
-  const [liveAppInfo, setLiveAppInfo] = useState<AppInfo | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const [searchResults, setSearchResults] = useState<{ appstore: SearchResult[]; googleplay: SearchResult[] } | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -97,8 +95,6 @@ export default function Home() {
   // 검색을 시작하면(포커스 중이거나 내용이 있으면) 상단 캐릭터·로고를 접고 부제만 남긴다
   const heroCollapsed = inputFocused || url.length > 0 || selectedApp !== null;
   const subtitle = sliderReady ? "수집할 기간을 선택해주세요" : heroCollapsed ? "분석할 서비스를 검색해주세요" : "스토어 리뷰 분석";
-
-  const isAllYears = yearRange[0] === minYear && yearRange[1] === MAX_YEAR;
 
   // 새로고침 복원 (같은 세션 탭에서만)
   useEffect(() => {
@@ -150,7 +146,6 @@ export default function Home() {
     setStatus("idle");
     setResult(null);
     setErrorMsg("");
-    setLiveAppInfo(null);
     setProgressCount(0);
     idbClear().catch(() => {});
   }, []);
@@ -174,9 +169,7 @@ export default function Home() {
     setStatus("loading");
     setResult(null);
     setErrorMsg("");
-    setProgressMsg("앱 정보를 확인하는 중...");
     setProgressCount(0);
-    setLiveAppInfo(null);
 
     try {
       const res = await fetch("/api/scrape", {
@@ -215,10 +208,7 @@ export default function Home() {
           try {
             const payload = JSON.parse(data);
             if (event === "progress") {
-              setProgressMsg(payload.message || "");
               setProgressCount(payload.count || 0);
-            } else if (event === "appinfo") {
-              setLiveAppInfo(payload as AppInfo);
             } else if (event === "done") {
               setResult(payload as ScrapeResult);
               setStatus("done");
@@ -292,6 +282,13 @@ export default function Home() {
     return () => controller.abort();
   }, [url, selectedApp, status, applyMinYear]);
 
+  // 수집 취소: 진행 중인 수집을 중단하고 선택한 서비스·기간이 남은 검색 화면으로 돌아간다
+  const handleCancel = () => {
+    const pushed = pushedRef.current;
+    resetView(); // 수집 중단(abort) + 화면은 즉시 복귀
+    if (pushed) history.back(); // 수집 시작 때 쌓아둔 히스토리 항목 정리
+  };
+
   const handleReset = () => {
     setUrl("");
     setSelectedApp(null);
@@ -321,54 +318,56 @@ export default function Home() {
         className={
           status === "done"
             ? "mx-auto max-w-[1200px] px-3 pb-24 md:px-6 md:pb-40"
-            : "flex min-h-[calc(100dvh-60px)] items-center justify-center px-3 pb-[60px]"
+            : `flex min-h-[calc(100dvh-60px)] items-center justify-center px-3 ${
+                // 모바일 하단 CTA(약 80px)에 콘텐츠가 가려지지 않게 아래 여백을 더 둔다
+                sliderReady ? "pb-[96px] md:pb-[60px]" : "pb-[60px]"
+              }`
         }
       >
         {status !== "done" && (
           <div className="flex w-full flex-col items-center gap-6 py-8">
-            {status === "idle" && (
-              <div className="text-center">
-                {/* 캐릭터·로고: 검색을 시작하면 위로 접히며 사라진다 (grid 행 높이 1fr → 0fr 전환) */}
-                <div
-                  aria-hidden={heroCollapsed}
-                  className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
-                    heroCollapsed ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"
-                  }`}
-                >
-                  <div className="overflow-hidden">
-                    <div className="mb-3 flex flex-col items-center justify-center gap-1 md:gap-2">
+            {/* 상단 안내(캐릭터·로고·단계별 문구): 수집 중·오류 때도 유지해서 안내 문구가 사라지지 않게 한다 */}
+            <div className="text-center">
+              {/* 캐릭터·로고: 검색을 시작하면 위로 접히며 사라진다 (grid 행 높이 1fr → 0fr 전환) */}
+              <div
+                aria-hidden={heroCollapsed}
+                className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
+                  heroCollapsed ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"
+                }`}
+              >
+                <div className="overflow-hidden">
+                  <div className="mb-3 flex flex-col items-center justify-center gap-1 md:gap-2">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/brand/stoview-logo-purple.svg"
+                      alt=""
+                      className="size-[72px] animate-dot-hop md:size-24"
+                    />
+                    {/* 104×48 SVG 워드마크: 모바일 72px / 데스크톱 96px */}
+                    <h1 className="m-0 leading-none">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src="/brand/stoview-logo-purple.svg"
-                        alt=""
-                        className="size-[72px] animate-dot-hop md:size-24"
+                        src="/brand/stoview-wordmark.svg"
+                        alt="스토뷰"
+                        width={104}
+                        height={48}
+                        className="h-[72px] w-auto md:h-24"
                       />
-                      {/* 104×48 SVG 워드마크: 모바일 72px / 데스크톱 96px */}
-                      <h1 className="m-0 leading-none">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src="/brand/stoview-wordmark.svg"
-                          alt="스토뷰"
-                          width={104}
-                          height={48}
-                          className="h-[72px] w-auto md:h-24"
-                        />
-                      </h1>
-                    </div>
+                    </h1>
                   </div>
                 </div>
-                {/* 단계별 안내 문구: 처음 → 검색 중 → 서비스 선택 후 (문구가 바뀔 때마다 key가 바뀌어 페이드인이 다시 재생됨) */}
-                <p
-                  key={subtitle}
-                  // 처음 소개 문구는 은은하게, 안내 문구(검색/기간 선택)는 더 밝고 크게
-                  className={`m-0 animate-fade-in ${
-                    heroCollapsed || sliderReady ? "text-xl font-semibold text-fg md:text-2xl" : "text-lg text-fg-muted"
-                  }`}
-                >
-                  {subtitle}
-                </p>
               </div>
-            )}
+              {/* 단계별 안내 문구: 처음 → 검색 중 → 서비스 선택 후 (문구가 바뀔 때마다 key가 바뀌어 페이드인이 다시 재생됨) */}
+              <p
+                key={subtitle}
+                // 처음 소개 문구는 은은하게, 안내 문구(검색/기간 선택)는 더 밝고 크게
+                className={`m-0 animate-fade-in ${
+                  heroCollapsed || sliderReady ? "text-xl font-semibold text-fg md:text-2xl" : "text-lg text-fg-muted"
+                }`}
+              >
+                {subtitle}
+              </p>
+            </div>
 
             <form onSubmit={handleSubmit} className="flex w-full max-w-[680px] flex-col gap-4">
               {/* 검색창 — 서비스가 선택되면 사라지고, 선택 카드의 x 버튼으로 지우면 다시 나타난다 */}
@@ -506,65 +505,19 @@ export default function Home() {
                       disabled={status === "loading"}
                     />
                   </div>
-                  <button
-                    type="submit"
-                    disabled={status === "loading"}
-                    className="animate-fade-in w-full cursor-pointer self-center rounded-xl bg-accent py-4 text-base font-bold text-white disabled:cursor-not-allowed disabled:opacity-60 md:max-w-[320px]"
-                  >
-                    {status === "loading" ? "수집 중..." : "분석하기"}
-                  </button>
+                  {/* 모바일: 화면 하단에 고정된 바텀 CTA(홈 인디케이터 영역 포함) / md 이상: 폼 흐름 안의 가운데 버튼 */}
+                  <div className="animate-fade-in fixed inset-x-0 bottom-0 z-[60] border-t border-line bg-background/90 px-4 pt-3 pb-[max(16px,env(safe-area-inset-bottom))] backdrop-blur md:static md:z-auto md:flex md:justify-center md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none">
+                    <button
+                      type="submit"
+                      disabled={status === "loading"}
+                      className="w-full cursor-pointer rounded-xl bg-accent py-4 text-base font-bold text-white disabled:cursor-not-allowed disabled:opacity-60 md:max-w-[320px]"
+                    >
+                      {status === "loading" ? "수집 중..." : "분석하기"}
+                    </button>
+                  </div>
                 </>
               )}
             </form>
-
-            {/* Loading state */}
-            {status === "loading" && (
-              <div className="w-full max-w-[680px]">
-                {liveAppInfo && (
-                  <div className="mb-3 flex items-center gap-3.5 rounded-xl bg-surface px-[18px] py-3.5">
-                    {liveAppInfo.icon && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={liveAppInfo.icon} alt="icon" className="size-11 rounded-[10px]" />
-                    )}
-                    <div className="min-w-0">
-                      <div className="text-sm font-semibold text-fg">{liveAppInfo.title}</div>
-                    </div>
-                    {!isAllYears && (
-                      <div className="ml-auto shrink-0 rounded-md bg-accent-glow px-2.5 py-[3px] text-xs font-bold text-accent-text">
-                        {formatYearRange(yearRange[0], yearRange[1])}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <div className="flex flex-col items-center gap-3.5 rounded-xl bg-surface px-6 py-5">
-                  <div className="flex w-full items-center gap-3">
-                    <div className="relative size-7 shrink-0">
-                      <div className="absolute inset-0 rounded-full border-[2.5px] border-line" />
-                      <div className="absolute inset-0 animate-spin rounded-full border-[2.5px] border-transparent border-t-accent" />
-                    </div>
-                    <div className="flex-1 text-[13px] font-medium text-fg">{progressMsg}</div>
-                    {progressCount > 0 && (
-                      <div className="shrink-0 text-[22px] font-bold text-accent-text tabular-nums">
-                        {progressCount.toLocaleString()}개
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="h-1 w-full overflow-hidden rounded-sm bg-surface-2">
-                    <div className="h-full animate-indeterminate rounded-sm bg-accent" />
-                  </div>
-
-                  <p className="m-0 text-center text-xs text-fg-muted">
-                    {!isAllYears
-                      ? `${formatYearRange(yearRange[0], yearRange[1])} 범위 — 기간을 벗어난 리뷰를 만나면 자동으로 멈춥니다`
-                      : liveAppInfo?.storeType === "googleplay"
-                        ? "구글플레이는 토큰이 끊길 때까지 전체 리뷰를 수집합니다"
-                        : "앱스토어는 공개 API 기준 최대 ~1,000개까지 수집됩니다"}
-                  </p>
-                </div>
-              </div>
-            )}
 
             {status === "error" && (
               <div className="w-full max-w-[680px] rounded-xl border border-negative/25 bg-negative/[0.13] px-5 py-3.5 text-center text-sm text-negative">
@@ -583,6 +536,29 @@ export default function Home() {
           </div>
         )}
       </main>
+
+      {/* 수집 중: 화면 전체를 어둡게(dim) 덮고 그 위에 진행 막대와 수집 개수를 표시 */}
+      {status === "loading" && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed inset-0 z-[200] flex animate-fade-in flex-col items-center justify-center gap-5 bg-black/70 px-6 backdrop-blur-[2px]"
+        >
+          <div className="h-1.5 w-full max-w-[280px] overflow-hidden rounded-full bg-white/15">
+            <div className="h-full animate-indeterminate rounded-full bg-accent" />
+          </div>
+          <p className="m-0 text-lg font-semibold text-fg tabular-nums">
+            리뷰 {progressCount.toLocaleString()}개 수집중...
+          </p>
+          <button
+            type="button"
+            onClick={handleCancel}
+            className="cursor-pointer rounded-full bg-white/15 px-4 py-1.5 text-[13px] font-medium text-fg transition-colors hover:bg-white/25"
+          >
+            취소
+          </button>
+        </div>
+      )}
     </div>
   );
 }

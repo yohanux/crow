@@ -72,10 +72,9 @@ export default function YearRangeSlider({ min, max, value, onChange, disabled }:
 
   return (
     <div className="flex flex-col gap-2.5">
-      <div className="flex items-center justify-between">
-        <span className="text-[13px] font-medium text-fg-muted">수집 기간</span>
+      <div className="flex items-center justify-center">
         {/* "전체 기간"도 연도 범위와 같은 배지 스타일 */}
-        <span className="rounded-md bg-accent-glow px-2.5 py-0.5 text-[13px] font-bold text-accent-text">
+        <span className="rounded-lg bg-accent-glow px-4 py-1.5 text-lg font-bold text-accent-text">
           {isAll ? "전체 기간" : formatYearRange(startYear, max)}
         </span>
       </div>
