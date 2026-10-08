@@ -94,6 +94,15 @@ export default function Home() {
   const [selectedApp, setSelectedApp] = useState<SearchResult | null>(null);
   // 검색을 시작하면(포커스 중이거나 내용이 있으면) 상단 캐릭터·로고를 접고 부제만 남긴다
   const heroCollapsed = inputFocused || url.length > 0 || selectedApp !== null;
+  // 검색 결과 목록이 화면 아래로 삐져나가 페이지가 스크롤되지 않도록, 입력창 아래 남은 공간만큼으로 높이를 제한한다
+  const [dropdownMaxH, setDropdownMaxH] = useState<number | null>(null);
+  const measureDropdown = useCallback(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    const room = Math.floor(window.innerHeight - el.getBoundingClientRect().bottom - 24);
+    const cap = window.innerWidth < 768 ? window.innerHeight * 0.6 : 560; // 기존 상한(모바일 60vh / 데스크톱 560px)
+    setDropdownMaxH(Math.max(120, Math.min(room, cap)));
+  }, []);
   const subtitle = sliderReady ? "수집할 기간을 선택해주세요" : heroCollapsed ? "분석할 서비스를 검색해주세요" : "스토어 리뷰 분석";
 
   // 새로고침 복원 (같은 세션 탭에서만)
@@ -120,6 +129,17 @@ export default function Home() {
   // 앱 이름 입력 시 스토어 검색 (URL이면 검색하지 않음)
   const query = url.trim();
   const isSearchQuery = query.length >= 2 && !classifyStore(query) && !/^https?:\/\//i.test(query);
+
+  // 목록이 열릴 때·결과가 바뀔 때·화면 크기가 바뀔 때 남은 공간을 다시 잰다
+  useEffect(() => {
+    if (!(searchOpen && isSearchQuery)) return;
+    const raf = requestAnimationFrame(measureDropdown);
+    window.addEventListener("resize", measureDropdown);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", measureDropdown);
+    };
+  }, [searchOpen, isSearchQuery, searchResults, heroCollapsed, measureDropdown]);
 
   useEffect(() => {
     if (!isSearchQuery || status === "loading") return;
@@ -301,7 +321,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       {/* Header */}
       <header className="sticky top-0 z-[100] flex h-[60px] items-center gap-4 border-b border-line bg-surface px-4 md:px-8">
         <button onClick={handleReset} className="flex cursor-pointer items-center gap-2.5 p-0">
@@ -331,6 +351,7 @@ export default function Home() {
               {/* 캐릭터·로고: 검색을 시작하면 위로 접히며 사라진다 (grid 행 높이 1fr → 0fr 전환) */}
               <div
                 aria-hidden={heroCollapsed}
+                onTransitionEnd={measureDropdown}
                 className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
                   heroCollapsed ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"
                 }`}
@@ -421,7 +442,7 @@ export default function Home() {
                   {searchOpen && isSearchQuery && status !== "loading" && (
                     <>
                       <div onClick={() => setSearchOpen(false)} className="fixed inset-0 z-40" />
-                      <div className="absolute inset-x-0 top-[calc(100%+8px)] z-50 max-h-[60vh] overflow-y-auto rounded-xl border border-line bg-surface p-2 shadow-[0_12px_32px_rgba(0,0,0,0.35)] md:max-h-[560px]">
+                      <div className="absolute inset-x-0 top-[calc(100%+8px)] z-50 overflow-y-auto rounded-xl border border-line bg-surface p-2 shadow-[0_12px_32px_rgba(0,0,0,0.35)]" style={{ maxHeight: dropdownMaxH ?? undefined }}>
                         {!searchResults && <div className="p-4 text-[13px] text-fg-muted">검색 중...</div>}
                         {searchResults &&
                           (["appstore", "googleplay"] as const).map((type) => {
@@ -496,7 +517,7 @@ export default function Home() {
               {/* 기간 슬라이더 + 분석하기 버튼 — 검색이 끝난 뒤(앱 선택/주소 확인 후)에 함께 나타난다 */}
               {sliderReady && (
                 <>
-                  <div className="animate-fade-in rounded-xl bg-surface px-6 pt-4 pb-5 md:px-10">
+                  <div className="animate-fade-in rounded-xl bg-surface px-9 pt-4 pb-5 md:px-16">
                     <YearRangeSlider
                       min={minYear}
                       max={MAX_YEAR}
